@@ -9,11 +9,37 @@ import { BonusModal } from '@/components/BonusGame/BonusModal';
 import { GambleModal } from '@/components/GambleMode/GambleModal';
 import { useAutoSpin } from '@/hooks/useAutoSpin';
 import { useGameStore } from '@/store/gameStore';
+import { useSpinSequence } from '@/hooks/useSpinSequence';
 
 const SceneCanvas = dynamic(
   () => import('@/components/Effects/SceneCanvas').then(m => m.SceneCanvas),
   { ssr: false }
 );
+
+function KeyboardControls() {
+  const phase = useGameStore(s => s.phase);
+  const creditWin = useGameStore(s => s.creditWin);
+  const triggerSpin = useGameStore(s => s.triggerSpin);
+  const { startSpin } = useSpinSequence();
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.code !== 'Space') return;
+      e.preventDefault();
+
+      if (phase === 'IDLE' || phase === 'FREE_SPINS') {
+        startSpin();
+      } else if (phase === 'WIN_DISPLAY') {
+        creditWin();
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [phase, startSpin, creditWin]);
+
+  return null;
+}
 
 function AutoSpinRunner() {
   useAutoSpin();
@@ -56,6 +82,7 @@ export function SlotMachine() {
       <SceneCanvas />
       <AutoSpinRunner />
       <FreeSpinAutoRunner />
+      <KeyboardControls />
 
       {/* Main game card */}
       <div
