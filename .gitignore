@@ -1,0 +1,84 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+.pnp.cjs
+.yarn/
+
+# Production builds
+.next/
+out/
+build/
+dist/
+
+# Testing
+/coverage
+/cypress/videos
+/cypress/screenshots
+/cypress/downloads
+
+# Environment variables
+.env
+.env*.local
+.env*.production
+.env*.development
+.env*.test
+
+# Vercel / Deployment
+.vercel
+.vercel.json
+.vite/
+
+# Logs and debug files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor / IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# ESLint / Prettier cache
+.eslintcache
+.stylelintcache
+.prettier-cache
+
+# Three.js specific (optional but recommended for webapps)
+# Any temporary GLTF/GLB conversion artifacts or cached models
+*.glb.tmp
+*.gltf.tmp
+# If you're using a bundler cache for large 3D assets
+.three-cache/
+
+# Optional: if you use Storybook or other dev tools
+.storybook-build/

@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-gold: #FFD700;
+  --color-crimson: #DC143C;
+  --color-jade: #00A86B;
+  --color-obsidian: #0D0D0D;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+  background: #0D0005;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: #ffffff;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #0D0D0D;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 2px;
+}
+
+/* Prevent text selection on game buttons */
+button {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.text-gold {
+  color: #FFD700;
+}
+
+.bg-gold {
+  background-color: #FFD700;
+}
+
+.border-gold {
+  border-color: #FFD700;
+}
+
+.text-crimson {
+  color: #DC143C;
+}
+
+.bg-crimson {
+  background-color: #DC143C;
+}

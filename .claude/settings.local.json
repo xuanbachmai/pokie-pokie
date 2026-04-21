@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/xuanbach02/Desktop/Claudeprojs/**)",
+      "Bash(npx create-next-app@14 claude101 --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --no-git)",
+      "Read(//usr/local/bin/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//Users/xuanbach02/.nvm/versions/**)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH\")",
+      "Read(//Users/xuanbach02/**)",
+      "Bash(export PATH=\"/Users/xuanbach02/Library/Application Support/com.raycast.macos/NodeJS/runtime/22.14.0/bin:$PATH\")",
+      "Bash(npm --version)",
+      "Bash(npx --version)",
+      "Bash(wait)",
+      "Bash('/Users/xuanbach02/Library/Application Support/com.raycast.macos/NodeJS/runtime/22.14.0/bin/node' -e 'require\\('\\\\''corepack'\\\\''\\)')",
+      "Bash('/Users/xuanbach02/Library/Application Support/com.raycast.macos/NodeJS/runtime/22.14.0/bin/node' -e 'console.log\\(process.execPath\\); console.log\\(require.resolve.paths\\('\\\\''npm'\\\\''\\)\\)')",
+      "Bash('/Users/xuanbach02/Library/Application Support/com.raycast.macos/NodeJS/runtime/22.14.0/bin/node' -e ' *)",
+      "Bash(mkdir -p /tmp/npm-pkg)",
+      "Bash(tar -xzf /tmp/npm.tgz -C /tmp/npm-pkg)",
+      "Read(//tmp/npm-pkg/**)",
+      "Bash('/Users/xuanbach02/Library/Application Support/com.raycast.macos/NodeJS/runtime/22.14.0/bin/node' /tmp/npm-pkg/package/bin/npm-cli.js --version)",
+      "Bash('/Users/xuanbach02/Library/Application Support/com.raycast.macos/NodeJS/runtime/22.14.0/bin/node' /tmp/npm-pkg/package/bin/npm-cli.js install)",
+      "Bash(ln -sf \"/Users/xuanbach02/Library/Application Support/com.raycast.macos/NodeJS/runtime/22.14.0/bin/node\" /tmp/node)",
+      "Bash(export PATH=\"/tmp:$PATH\")",
+      "Bash(node /tmp/npm-pkg/package/bin/npm-cli.js install)",
+      "Bash(node /tmp/npm-pkg/package/bin/npm-cli.js run build)",
+      "Bash(node /tmp/npm-pkg/package/bin/npm-cli.js run dev -- --port 3099)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3099/)",
+      "Bash(export PATH=\"/tmp:$PATH\" cd /Users/xuanbach02/Desktop/Claudeprojs/claude101)"
+    ]
+  }
+}
