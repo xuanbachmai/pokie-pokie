@@ -29,10 +29,8 @@ export const REEL_STRIPS: SymbolId[][] = [
 
 /**
  * Enforce buffalo constraints on the visible grid (mutates in place):
- *   - At most 1 Diamond Buffalo (SPECIAL) per spin — extras become NUGGET
- *   - At most 5 regular Buffalo (NUGGET) per spin — extras become COIN
- * This ensures the maximum possible buffalo count is exactly 6 (1 SPECIAL + 5 NUGGET),
- * which is the Buffalo Rush trigger threshold.
+ *   - At most 1 Diamond Buffalo (SPECIAL) per spin — extras become NUGGET.
+ *   - Regular Buffalo (NUGGET) are unlimited; a single column can show 1, 2 or 3.
  */
 function enforceBuffaloLimits(grid: SymbolId[][]): void {
   // Collect all SPECIAL positions
@@ -41,32 +39,13 @@ function enforceBuffaloLimits(grid: SymbolId[][]): void {
     for (let row = 0; row < grid[col].length; row++)
       if (grid[col][row] === SymbolId.SPECIAL) specialPositions.push([col, row]);
 
-  // Keep one random SPECIAL, downgrade the rest to NUGGET
+  // Keep one random SPECIAL, downgrade the rest to regular NUGGET
   if (specialPositions.length > 1) {
     const keepIdx = Math.floor(Math.random() * specialPositions.length);
     for (let i = 0; i < specialPositions.length; i++) {
       if (i === keepIdx) continue;
       const [col, row] = specialPositions[i];
       grid[col][row] = SymbolId.NUGGET;
-    }
-  }
-
-  // Collect all NUGGET positions (may now include the downgraded ones above)
-  const nuggetPositions: Array<[number, number]> = [];
-  for (let col = 0; col < grid.length; col++)
-    for (let row = 0; row < grid[col].length; row++)
-      if (grid[col][row] === SymbolId.NUGGET) nuggetPositions.push([col, row]);
-
-  // Replace any NUGGET beyond the 5th with COIN (a regular low-value symbol)
-  if (nuggetPositions.length > 5) {
-    // Shuffle so we remove random ones, not always the last columns
-    for (let i = nuggetPositions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [nuggetPositions[i], nuggetPositions[j]] = [nuggetPositions[j], nuggetPositions[i]];
-    }
-    for (let i = 5; i < nuggetPositions.length; i++) {
-      const [col, row] = nuggetPositions[i];
-      grid[col][row] = SymbolId.COIN;
     }
   }
 }
