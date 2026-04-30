@@ -47,17 +47,6 @@ export function JackpotTicker({ tier, value }: Props) {
         <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: config.color }}>
           {config.label}
         </span>
-        {/* Badge: LIVE for progressive, FIXED for static */}
-        <span
-          className="text-[8px] font-black rounded px-0.5 leading-tight"
-          style={{
-            color: isProgressive ? '#FF4D6D' : 'rgba(255,255,255,0.35)',
-            background: isProgressive ? 'rgba(255,77,109,0.15)' : 'rgba(255,255,255,0.06)',
-            border: `0.5px solid ${isProgressive ? 'rgba(255,77,109,0.4)' : 'rgba(255,255,255,0.12)'}`,
-          }}
-        >
-          {isProgressive ? '▲ LIVE' : 'FIXED'}
-        </span>
       </div>
 
       {/* Value */}

@@ -77,17 +77,6 @@ function MegaJackpotDisplay() {
           {displayed}
         </motion.span>
 
-        {/* Live badge */}
-        <span
-          className="text-[9px] font-black rounded px-1.5 py-0.5 tracking-widest"
-          style={{
-            color: '#FF4D6D',
-            background: 'rgba(255,77,109,0.15)',
-            border: '0.5px solid rgba(255,77,109,0.4)',
-          }}
-        >
-          ▲ LIVE PROGRESSIVE
-        </span>
       </div>
 
       {/* Bottom accent bar */}
