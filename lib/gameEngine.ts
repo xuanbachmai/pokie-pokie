@@ -1,10 +1,16 @@
 import { PAYLINES, REEL_SIZE, SYMBOLS } from './constants';
-import { ScatterResult, SpinResult, SymbolId, WinLine } from '@/types/game';
+import { NuggetResult, ScatterResult, SpinResult, SymbolId, WinLine } from '@/types/game';
 import { shuffle } from './utils';
 
-function buildReelStrip(): SymbolId[] {
+/**
+ * Build a reel strip.
+ * @param includeScatter  false for outer reels (0 and 4) — scatter never appears there
+ */
+function buildReelStrip(includeScatter: boolean): SymbolId[] {
   const strip: SymbolId[] = [];
   for (const sym of Object.values(SYMBOLS)) {
+    // Skip scatter on outer reels; keep it (weight 1) on middle reels
+    if (sym.isScatter && sym.id === SymbolId.SCATTER && !includeScatter) continue;
     for (let i = 0; i < sym.weight; i++) strip.push(sym.id);
   }
   const shuffled = shuffle(strip);
@@ -12,8 +18,58 @@ function buildReelStrip(): SymbolId[] {
   return shuffled.slice(0, REEL_SIZE);
 }
 
-// Build 5 independent reel strips once
-export const REEL_STRIPS: SymbolId[][] = Array.from({ length: 5 }, () => buildReelStrip());
+// Reels 0 and 4 have no scatter; reels 1, 2, 3 do
+export const REEL_STRIPS: SymbolId[][] = [
+  buildReelStrip(false), // reel 1 — no scatter
+  buildReelStrip(true),  // reel 2 — scatter allowed
+  buildReelStrip(true),  // reel 3 — scatter allowed
+  buildReelStrip(true),  // reel 4 — scatter allowed
+  buildReelStrip(false), // reel 5 — no scatter
+];
+
+/**
+ * Enforce buffalo constraints on the visible grid (mutates in place):
+ *   - At most 1 Diamond Buffalo (SPECIAL) per spin — extras become NUGGET
+ *   - At most 5 regular Buffalo (NUGGET) per spin — extras become COIN
+ * This ensures the maximum possible buffalo count is exactly 6 (1 SPECIAL + 5 NUGGET),
+ * which is the Buffalo Rush trigger threshold.
+ */
+function enforceBuffaloLimits(grid: SymbolId[][]): void {
+  // Collect all SPECIAL positions
+  const specialPositions: Array<[number, number]> = [];
+  for (let col = 0; col < grid.length; col++)
+    for (let row = 0; row < grid[col].length; row++)
+      if (grid[col][row] === SymbolId.SPECIAL) specialPositions.push([col, row]);
+
+  // Keep one random SPECIAL, downgrade the rest to NUGGET
+  if (specialPositions.length > 1) {
+    const keepIdx = Math.floor(Math.random() * specialPositions.length);
+    for (let i = 0; i < specialPositions.length; i++) {
+      if (i === keepIdx) continue;
+      const [col, row] = specialPositions[i];
+      grid[col][row] = SymbolId.NUGGET;
+    }
+  }
+
+  // Collect all NUGGET positions (may now include the downgraded ones above)
+  const nuggetPositions: Array<[number, number]> = [];
+  for (let col = 0; col < grid.length; col++)
+    for (let row = 0; row < grid[col].length; row++)
+      if (grid[col][row] === SymbolId.NUGGET) nuggetPositions.push([col, row]);
+
+  // Replace any NUGGET beyond the 5th with COIN (a regular low-value symbol)
+  if (nuggetPositions.length > 5) {
+    // Shuffle so we remove random ones, not always the last columns
+    for (let i = nuggetPositions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [nuggetPositions[i], nuggetPositions[j]] = [nuggetPositions[j], nuggetPositions[i]];
+    }
+    for (let i = 5; i < nuggetPositions.length; i++) {
+      const [col, row] = nuggetPositions[i];
+      grid[col][row] = SymbolId.COIN;
+    }
+  }
+}
 
 export function spin(): SpinResult {
   const stopPositions = REEL_STRIPS.map(strip =>
@@ -23,6 +79,7 @@ export function spin(): SpinResult {
     const stop = stopPositions[col];
     return [0, 1, 2].map(row => strip[(stop + row) % strip.length]);
   });
+  enforceBuffaloLimits(visibleGrid);
   return { visibleGrid, stopPositions };
 }
 
@@ -73,14 +130,29 @@ export function evaluatePaylines(grid: SymbolId[][], betPerLine: number): WinLin
   return wins;
 }
 
-export function evaluateScatters(grid: SymbolId[][], totalBet: number): ScatterResult {
-  let count = 0;
-  for (let col = 0; col < 5; col++) {
-    for (let row = 0; row < 3; row++) {
-      if (grid[col][row] === SymbolId.SCATTER) count++;
-    }
-  }
-  const payoutMultiplier = SYMBOLS[SymbolId.SCATTER].payouts[count] ?? 0;
-  const payout = payoutMultiplier * totalBet;
-  return { count, payout, triggerBonus: count >= 3 };
+export function evaluateScatters(grid: SymbolId[][], _totalBet: number): ScatterResult {
+  // Scatter (Trống Đồng) only appears on the 3 middle reels (cols 1, 2, 3).
+  // Trigger = all 3 middle reels each show at least 1 scatter in their visible rows.
+  // No payout — scatter only triggers Free Games.
+  const MIDDLE_COLS = [1, 2, 3];
+  const colHasScatter = MIDDLE_COLS.map(col =>
+    [0, 1, 2].some(row => grid[col][row] === SymbolId.SCATTER)
+  );
+  const count = colHasScatter.filter(Boolean).length;
+  const triggerBonus = colHasScatter.every(Boolean); // all 3 middle reels lit
+  return { count, payout: 0, triggerBonus };
 }
+
+export function evaluateNuggets(grid: SymbolId[][]): NuggetResult {
+  let count = 0;
+  for (let col = 0; col < 5; col++)
+    for (let row = 0; row < 3; row++) {
+      const s = grid[col][row];
+      // Both regular Buffalo (NUGGET) and Diamond Buffalo (SPECIAL) count
+      if (s === SymbolId.NUGGET || s === SymbolId.SPECIAL) count++;
+    }
+
+  // Jackpot tiers are awarded only inside Buffalo Rush — never on the main reels
+  return { count, jackpotTier: null, triggerFeature: count >= 6 };
+}
+

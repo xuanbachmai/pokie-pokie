@@ -18,11 +18,11 @@ export function FreeSpinsBanner({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex flex-col items-center gap-6 p-6">
       <motion.div
-        className="text-3xl font-black text-emerald-400"
+        className="text-3xl font-black text-amber-600"
         animate={{ scale: [1, 1.1, 1] }}
         transition={{ duration: 0.8, repeat: Infinity }}
       >
-        ✨ FREE SPINS! ✨
+        🥁 FREE GAMES! 🥁
       </motion.div>
       <div className="flex gap-8 text-center">
         <div>
@@ -35,16 +35,16 @@ export function FreeSpinsBanner({ onClose }: { onClose: () => void }) {
           <div className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Multiplier</div>
         </div>
       </div>
-      <p className="text-gray-400 text-sm text-center">All wins multiplied by {freeSpinsMultiplier}x!</p>
+      <p className="text-gray-400 text-sm text-center">All wins multiplied by {freeSpinsMultiplier}x! 🐃 More Trâu!</p>
       <motion.button
         onClick={handleStart}
         className="px-10 py-3 rounded-full font-black text-black text-sm"
-        style={{ background: 'linear-gradient(90deg, #00D187, #00A86B)' }}
+        style={{ background: 'linear-gradient(90deg, #CC0000, #FF8C00)' }}
         whileTap={{ scale: 0.95 }}
-        animate={{ boxShadow: ['0 0 10px rgba(0,200,120,0.3)', '0 0 25px rgba(0,200,120,0.7)', '0 0 10px rgba(0,200,120,0.3)'] }}
+        animate={{ boxShadow: ['0 0 10px rgba(204,0,0,0.3)', '0 0 25px rgba(204,0,0,0.7)', '0 0 10px rgba(204,0,0,0.3)'] }}
         transition={{ duration: 1, repeat: Infinity }}
       >
-        START FREE SPINS!
+        START FREE GAMES!
       </motion.button>
     </div>
   );

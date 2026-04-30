@@ -1,36 +1,27 @@
 import { JACKPOT_CONFIGS, PAYLINES } from './constants';
 import { JackpotTier, SymbolId } from '@/types/game';
 
-export function checkJackpotTrigger(grid: SymbolId[][]): JackpotTier | null {
-  // Check Grand first (highest tier), then downward
-  const tiers = [JackpotTier.GRAND, JackpotTier.MAJOR, JackpotTier.MINOR, JackpotTier.MINI];
-
-  for (const tier of tiers) {
-    const config = JACKPOT_CONFIGS[tier];
-    const target = config.triggerSymbol;
-
-    for (const line of PAYLINES) {
-      let count = 0;
-      for (let col = 0; col < 5; col++) {
-        const sym = grid[col][line[col]];
-        if (sym === target || sym === SymbolId.WILD) count++;
-        else break;
-      }
-      if (count === 5) return tier;
-    }
-  }
-
+/**
+ * Jackpots (Mini/Major/Maxi/Mega) are awarded ONLY inside Buffalo Rush.
+ * This function intentionally always returns null for the main game.
+ */
+export function checkJackpotTrigger(_grid: SymbolId[][]): JackpotTier | null {
   return null;
 }
 
+/**
+ * Only MEGA (JackpotTier.GRAND) is a progressive jackpot that grows from bets.
+ * MINI, MAJOR (MINOR tier), and MAXI (MAJOR tier) are fixed prize amounts.
+ */
 export function contributeToJackpots(
   currentValues: Record<JackpotTier, number>,
   totalBet: number
 ): Record<JackpotTier, number> {
   const next = { ...currentValues };
-  for (const tier of Object.values(JackpotTier)) {
-    next[tier] += totalBet * JACKPOT_CONFIGS[tier].contributionRate;
-  }
+  // Only GRAND tier (MEGA) accumulates from player bets
+  next[JackpotTier.GRAND] = parseFloat(
+    (next[JackpotTier.GRAND] + totalBet * JACKPOT_CONFIGS[JackpotTier.GRAND].contributionRate).toFixed(2)
+  );
   return next;
 }
 

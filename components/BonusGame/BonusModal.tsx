@@ -1,19 +1,17 @@
 'use client';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
-import { DragonEggBonus } from './DragonEggBonus';
-import { LuckyLanterns } from './LuckyLanterns';
+import { NuggetHoldFeature } from './NuggetHoldFeature';
 import { FreeSpinsBanner } from './FreeSpinsBanner';
 
 export function BonusModal() {
-  const phase = useGameStore(s => s.phase);
+  const phase          = useGameStore(s => s.phase);
   const activeBonusType = useGameStore(s => s.activeBonusType);
-  const lastScatterResult = useGameStore(s => s.lastScatterResult);
-  const triggerBonus = useGameStore(s => s.triggerBonus);
+  const triggerBonus   = useGameStore(s => s.triggerBonus);
 
   const showTrigger = phase === 'BONUS_TRIGGER';
-  const showActive = phase === 'BONUS_ACTIVE';
-  const visible = showTrigger || showActive;
+  const showActive  = phase === 'BONUS_ACTIVE' && activeBonusType !== null;
+  const visible     = showTrigger || showActive;
 
   return (
     <AnimatePresence>
@@ -37,20 +35,21 @@ export function BonusModal() {
             exit={{ scale: 0.8, y: 40 }}
             transition={{ type: 'spring', stiffness: 250, damping: 20 }}
           >
+            {/* ── Scatter trigger: 3 Trống Đồng → Free Games ── */}
             {showTrigger && (
               <div className="flex flex-col items-center gap-6 p-8">
                 <motion.div
                   className="text-5xl"
-                  animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
+                  animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.25, 1] }}
                   transition={{ duration: 0.6, repeat: 3 }}
                 >
-                  ☯️
+                  🥁
                 </motion.div>
                 <div className="text-2xl font-black text-white text-center">
-                  BONUS TRIGGERED!
+                  FREE GAMES!
                 </div>
                 <div className="text-yellow-400 text-center text-sm">
-                  {lastScatterResult?.count} Yin-Yang symbols found!
+                  Trống Đồng on all 3 middle reels — 6 Free Spins awarded!
                 </div>
                 <motion.button
                   onClick={triggerBonus}
@@ -65,17 +64,17 @@ export function BonusModal() {
                   }}
                   transition={{ duration: 1, repeat: Infinity }}
                 >
-                  PLAY BONUS!
+                  PLAY FREE GAMES!
                 </motion.button>
               </div>
             )}
 
-            {showActive && activeBonusType === 'DRAGON_EGG' && (
-              <DragonEggBonus onClose={() => {}} />
+            {/* ── Buffalo Rush ── */}
+            {showActive && activeBonusType === 'NUGGET_HOLD' && (
+              <NuggetHoldFeature onClose={() => {}} />
             )}
-            {showActive && activeBonusType === 'LUCKY_LANTERNS' && (
-              <LuckyLanterns onClose={() => {}} />
-            )}
+
+            {/* ── Free Spins banner (shown briefly when FREE_SPINS phase starts) ── */}
             {showActive && activeBonusType === 'FREE_SPINS' && (
               <FreeSpinsBanner onClose={() => {}} />
             )}

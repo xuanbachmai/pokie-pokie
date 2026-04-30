@@ -8,6 +8,8 @@ export enum SymbolId {
   JADE = 'JADE',
   WILD = 'WILD',
   SCATTER = 'SCATTER',
+  NUGGET = 'NUGGET',
+  SPECIAL = 'SPECIAL',
 }
 
 export interface GameSymbol {
@@ -60,19 +62,7 @@ export interface SpinResult {
   stopPositions: number[];
 }
 
-export type BonusGameType = 'DRAGON_EGG' | 'LUCKY_LANTERNS' | 'FREE_SPINS';
-
-export interface DragonEggPrize {
-  multiplier: number;
-  label: string;
-  revealed: boolean;
-}
-
-export interface LanternPrize {
-  credits: number;
-  label: string;
-  revealed: boolean;
-}
+export type BonusGameType = 'FREE_SPINS' | 'NUGGET_HOLD';
 
 export interface FreeSpinsConfig {
   spinsAwarded: number;
@@ -80,9 +70,14 @@ export interface FreeSpinsConfig {
 }
 
 export type BonusPrize =
-  | { type: 'DRAGON_EGG'; amount: number; multiplier: number }
-  | { type: 'LUCKY_LANTERNS'; amount: number }
-  | { type: 'FREE_SPINS'; config: FreeSpinsConfig };
+  | { type: 'FREE_SPINS'; config: FreeSpinsConfig }
+  | { type: 'NUGGET_HOLD'; count: number; totalAmount: number };
+
+export interface NuggetResult {
+  count: number;
+  jackpotTier: JackpotTier | null;
+  triggerFeature: boolean;
+}
 
 export interface CardDraw {
   suit: 'spades' | 'hearts' | 'diamonds' | 'clubs';
