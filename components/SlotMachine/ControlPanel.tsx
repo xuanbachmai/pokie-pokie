@@ -231,91 +231,67 @@ export function ControlPanel({ onChangeDenom }: { onChangeDenom?: () => void }) 
         )}
       </AnimatePresence>
 
-      {/* ── Denomination row ── */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <div
-            className="px-3 py-1.5 rounded-full text-sm font-black"
-            style={{ background: `${cfg.color}22`, border: `1px solid ${cfg.color}66`, color: cfg.color }}
-          >
-            {cfg.label}
-          </div>
+      {/* ── Row 1: Multiple options ── */}
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] uppercase tracking-widest px-0.5" style={{ color: 'rgba(255,215,0,0.4)' }}>Multiple</span>
+        <div className="flex gap-1.5">
+          {cfg.multiples.map(m => {
+            const active = m === betMultiple;
+            return (
+              <button
+                key={m}
+                onClick={() => setBetMultiple(m)}
+                disabled={!canSpin}
+                className="flex-1 py-1.5 rounded-lg font-black text-sm disabled:opacity-30 transition-all"
+                style={{
+                  background: active ? cfg.color : `${cfg.color}18`,
+                  border: `1px solid ${active ? cfg.color : `${cfg.color}40`}`,
+                  color: active ? '#000' : cfg.color,
+                  boxShadow: active ? `0 0 10px ${cfg.color}66` : 'none',
+                }}
+              >
+                ×{m}
+              </button>
+            );
+          })}
         </div>
-        {onChangeDenom && (
-          <button
-            onClick={onChangeDenom}
-            disabled={!canSpin}
-            className="text-xs text-gray-500 hover:text-yellow-400 transition-colors disabled:opacity-30 underline"
-          >
-            game menu
-          </button>
-        )}
       </div>
 
-      {/* ── Lines | Multiple display row ── */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Lines */}
-        <div
-          className="flex flex-col items-center py-3 px-2 rounded-xl gap-1"
-          style={{ background: 'rgba(0,0,0,0.55)', border: `1px solid ${cfg.color}33` }}
-        >
+      {/* ── Row 2: Lines options + denom chip ── */}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between px-0.5">
           <span className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,215,0,0.4)' }}>Lines</span>
-          <div className="flex items-center gap-2 w-full justify-center">
+          {onChangeDenom && (
             <button
-              onClick={() => { const i = cfg.lines.indexOf(activeLines); if (i > 0) setLines(cfg.lines[i-1]); }}
-              disabled={!canSpin || cfg.lines.indexOf(activeLines) === 0}
-              className="text-lg font-black disabled:opacity-20"
-              style={{ color: cfg.color, width: 24 }}
-            >‹</button>
-            <motion.span
-              key={activeLines}
-              className="text-2xl font-black tabular-nums"
-              style={{ color: cfg.color, minWidth: 32, textAlign: 'center' }}
-              initial={{ scale: 1.3, opacity: 0.5 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.15 }}
+              onClick={onChangeDenom}
+              disabled={!canSpin}
+              className="text-[10px] font-black rounded-full px-2 py-0.5 disabled:opacity-30 transition-all"
+              style={{ background: `${cfg.color}22`, border: `1px solid ${cfg.color}55`, color: cfg.color }}
             >
-              {activeLines}
-            </motion.span>
-            <button
-              onClick={() => { const i = cfg.lines.indexOf(activeLines); if (i < cfg.lines.length-1) setLines(cfg.lines[i+1]); }}
-              disabled={!canSpin || cfg.lines.indexOf(activeLines) === cfg.lines.length - 1}
-              className="text-lg font-black disabled:opacity-20"
-              style={{ color: cfg.color, width: 24 }}
-            >›</button>
-          </div>
+              {cfg.label} · change
+            </button>
+          )}
         </div>
-
-        {/* Multiple */}
-        <div
-          className="flex flex-col items-center py-3 px-2 rounded-xl gap-1"
-          style={{ background: 'rgba(0,0,0,0.55)', border: `1px solid ${cfg.color}33` }}
-        >
-          <span className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,215,0,0.4)' }}>Multiple</span>
-          <div className="flex items-center gap-2 w-full justify-center">
-            <button
-              onClick={() => { const i = cfg.multiples.indexOf(betMultiple); if (i > 0) setBetMultiple(cfg.multiples[i-1]); }}
-              disabled={!canSpin || cfg.multiples.indexOf(betMultiple) === 0}
-              className="text-lg font-black disabled:opacity-20"
-              style={{ color: cfg.color, width: 24 }}
-            >‹</button>
-            <motion.span
-              key={betMultiple}
-              className="text-2xl font-black tabular-nums"
-              style={{ color: cfg.color, minWidth: 40, textAlign: 'center' }}
-              initial={{ scale: 1.3, opacity: 0.5 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.15 }}
-            >
-              ×{betMultiple}
-            </motion.span>
-            <button
-              onClick={() => { const i = cfg.multiples.indexOf(betMultiple); if (i < cfg.multiples.length-1) setBetMultiple(cfg.multiples[i+1]); }}
-              disabled={!canSpin || cfg.multiples.indexOf(betMultiple) === cfg.multiples.length - 1}
-              className="text-lg font-black disabled:opacity-20"
-              style={{ color: cfg.color, width: 24 }}
-            >›</button>
-          </div>
+        <div className="flex gap-1.5">
+          {cfg.lines.map(l => {
+            const active = l === activeLines;
+            return (
+              <button
+                key={l}
+                onClick={() => setLines(l)}
+                disabled={!canSpin}
+                className="flex-1 py-1.5 rounded-lg font-black text-sm disabled:opacity-30 transition-all"
+                style={{
+                  background: active ? cfg.color : `${cfg.color}18`,
+                  border: `1px solid ${active ? cfg.color : `${cfg.color}40`}`,
+                  color: active ? '#000' : cfg.color,
+                  boxShadow: active ? `0 0 10px ${cfg.color}66` : 'none',
+                }}
+              >
+                {l}
+              </button>
+            );
+          })}
         </div>
       </div>
 
