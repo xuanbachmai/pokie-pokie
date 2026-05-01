@@ -12,15 +12,8 @@ const SUIT_SYMBOL: Record<CardDraw['suit'], string> = {
   spades: '♠', hearts: '♥', diamonds: '♦', clubs: '♣',
 };
 const SUIT_COLOR: Record<CardDraw['suit'], string> = {
-  spades: '#111', hearts: '#CC0000', diamonds: '#CC0000', clubs: '#111',
+  spades: '#1a1a1a', hearts: '#C0000A', diamonds: '#C0000A', clubs: '#1a1a1a',
 };
-function cardLabel(v: number) {
-  if (v === 1)  return 'A';
-  if (v === 11) return 'J';
-  if (v === 12) return 'Q';
-  if (v === 13) return 'K';
-  return String(v);
-}
 
 /* ── Mini history card ──────────────────────────────────────────────────── */
 interface HistoryEntry { card: CardDraw; won: boolean; id: number }
@@ -28,34 +21,27 @@ interface HistoryEntry { card: CardDraw; won: boolean; id: number }
 function MiniCard({ card, won }: { card: CardDraw; won: boolean }) {
   const sym   = SUIT_SYMBOL[card.suit];
   const color = SUIT_COLOR[card.suit];
-  const label = cardLabel(card.value);
   return (
     <motion.div
       initial={{ scale: 0, x: -8, opacity: 0 }}
       animate={{ scale: 1, x: 0,  opacity: 1 }}
       exit={{ scale: 0, opacity: 0 }}
-      className="relative flex flex-col items-center justify-between rounded select-none"
+      className="relative flex flex-col items-center justify-between rounded-md select-none"
       style={{
         width: 28, height: 40,
-        background: '#FFFEF5',
+        background: 'linear-gradient(160deg, #FFFEF8, #F5F0E5)',
         border: `1.5px solid ${won ? '#00C853' : '#D32F2F'}`,
-        boxShadow: won
-          ? '0 0 6px rgba(0,200,83,0.55)'
-          : '0 0 4px rgba(211,47,47,0.5)',
+        boxShadow: won ? '0 0 6px rgba(0,200,83,0.5)' : '0 0 4px rgba(211,47,47,0.45)',
         padding: '2px 3px',
         color,
       }}
     >
-      {/* Top-left corner */}
-      <div style={{ alignSelf: 'flex-start', lineHeight: 1, fontSize: 7, fontWeight: 900 }}>
-        {label}<br />{sym}
-      </div>
+      {/* Top-left: suit only */}
+      <div style={{ alignSelf: 'flex-start', fontSize: 8, lineHeight: 1, fontWeight: 900 }}>{sym}</div>
       {/* Center suit */}
-      <div style={{ fontSize: 12, lineHeight: 1 }}>{sym}</div>
-      {/* Bottom-right corner (rotated 180°) */}
-      <div style={{ alignSelf: 'flex-end', lineHeight: 1, fontSize: 7, fontWeight: 900, transform: 'rotate(180deg)' }}>
-        {label}<br />{sym}
-      </div>
+      <div style={{ fontSize: 13, lineHeight: 1 }}>{sym}</div>
+      {/* Bottom-right: suit only, rotated */}
+      <div style={{ alignSelf: 'flex-end', fontSize: 8, lineHeight: 1, fontWeight: 900, transform: 'rotate(180deg)' }}>{sym}</div>
       {/* Win / lose dot */}
       <div style={{
         position: 'absolute', top: -4, right: -4,
@@ -71,29 +57,30 @@ function MiniCard({ card, won }: { card: CardDraw; won: boolean }) {
 function CardFace({ card }: { card: CardDraw }) {
   const sym   = SUIT_SYMBOL[card.suit];
   const color = SUIT_COLOR[card.suit];
-  const label = cardLabel(card.value);
   return (
     <div
-      className="w-full h-full rounded-xl select-none flex flex-col justify-between"
+      className="w-full h-full rounded-[10px] select-none flex flex-col justify-between"
       style={{
-        background: 'linear-gradient(145deg, #FFFFF8, #F5F0E0)',
-        padding: '7px 8px',
+        background: 'linear-gradient(160deg, #FFFEF8 0%, #F8F3E8 100%)',
+        padding: '8px 9px',
         color,
-        boxShadow: 'inset 0 0 0 1.5px rgba(0,0,0,0.08)',
+        border: '1px solid #d4c9a8',
+        boxShadow: 'inset 0 0 0 5px rgba(0,0,0,0.055)',
       }}
     >
-      {/* Top-left */}
-      <div style={{ lineHeight: 1.1 }}>
-        <div style={{ fontSize: 19, fontWeight: 900, fontFamily: 'Georgia, serif', lineHeight: 1 }}>{label}</div>
-        <div style={{ fontSize: 17, lineHeight: 1 }}>{sym}</div>
+      {/* Top-left: suit only */}
+      <div style={{ fontSize: 18, lineHeight: 1, fontWeight: 900 }}>{sym}</div>
+      {/* Centre: large suit with shadow */}
+      <div style={{
+        textAlign: 'center',
+        fontSize: 72,
+        lineHeight: 1,
+        filter: `drop-shadow(0 2px 4px ${color === '#1a1a1a' ? 'rgba(0,0,0,0.25)' : 'rgba(180,0,0,0.3)'})`,
+      }}>
+        {sym}
       </div>
-      {/* Center large suit */}
-      <div style={{ textAlign: 'center', fontSize: 52, lineHeight: 1 }}>{sym}</div>
-      {/* Bottom-right (upside down) */}
-      <div style={{ alignSelf: 'flex-end', transform: 'rotate(180deg)', lineHeight: 1.1 }}>
-        <div style={{ fontSize: 19, fontWeight: 900, fontFamily: 'Georgia, serif', lineHeight: 1 }}>{label}</div>
-        <div style={{ fontSize: 17, lineHeight: 1 }}>{sym}</div>
-      </div>
+      {/* Bottom-right: suit only, rotated */}
+      <div style={{ alignSelf: 'flex-end', fontSize: 18, lineHeight: 1, fontWeight: 900, transform: 'rotate(180deg)' }}>{sym}</div>
     </div>
   );
 }
@@ -102,42 +89,32 @@ function CardFace({ card }: { card: CardDraw }) {
 function CardBack() {
   return (
     <div
-      className="w-full h-full rounded-xl overflow-hidden"
+      className="w-full h-full rounded-[10px] overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #0D3B0D, #1A6B1A, #0D3B0D)',
+        backgroundColor: '#7A0010',
+        backgroundImage: [
+          'linear-gradient(45deg, rgba(255,255,255,0.07) 25%, transparent 25%)',
+          'linear-gradient(-45deg, rgba(255,255,255,0.07) 25%, transparent 25%)',
+          'linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.07) 75%)',
+          'linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.07) 75%)',
+        ].join(', '),
+        backgroundSize: '14px 14px',
+        backgroundPosition: '0 0, 0 7px, 7px -7px, -7px 0px',
+        boxShadow: [
+          'inset 0 0 0 6px rgba(255,255,255,0.12)',
+          'inset 0 0 0 8px rgba(255,255,255,0.05)',
+          'inset 0 0 0 9px rgba(180,0,0,0.4)',
+        ].join(', '),
         position: 'relative',
       }}
     >
-      {/* Diamond trellis pattern */}
-      <svg
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.22 }}
-        viewBox="0 0 80 112" preserveAspectRatio="none"
-      >
-        {Array.from({ length: 7 }, (_, col) =>
-          Array.from({ length: 9 }, (_, row) => (
-            <rect
-              key={`${col}-${row}`}
-              x={col * 13 - 6.5} y={row * 13 - 6.5}
-              width={9} height={9}
-              transform={`rotate(45 ${col * 13} ${row * 13})`}
-              fill="#FFD700"
-            />
-          ))
-        )}
-      </svg>
-      {/* Border */}
+      {/* Inner border frame */}
       <div style={{
-        position: 'absolute', inset: 5,
-        border: '1.5px solid rgba(255,215,0,0.45)', borderRadius: 8,
+        position: 'absolute',
+        inset: 7,
+        border: '1px solid rgba(255,255,255,0.18)',
+        borderRadius: 5,
       }} />
-      {/* Center emblem */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 36,
-      }}>
-        🃏
-      </div>
     </div>
   );
 }
@@ -268,7 +245,7 @@ export function GambleModal() {
               <div style={{ perspective: 700 }}>
                 <motion.div
                   style={{
-                    width: 90, height: 126,
+                    width: 100, height: 140,
                     transformStyle: 'preserve-3d' as const,
                     position: 'relative',
                   }}
