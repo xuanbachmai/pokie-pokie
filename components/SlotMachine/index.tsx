@@ -255,15 +255,16 @@ function GameRulesModal({ onClose }: { onClose: () => void }) {
           {/* How wins work */}
           <Section title="📏 HOW WINS WORK">
             <div className="text-[12px] text-gray-300 flex flex-col gap-1">
-              <div>• Wins pay <span className="text-yellow-400 font-bold">left-to-right on paylines only</span> — 3, 4 or 5 matching symbols from reel 1.</div>
+              <div>• Wins pay <span className="text-yellow-400 font-bold">left-to-right on paylines</span> — 3, 4 or 5 matching symbols starting from reel 1.</div>
+              <div>• Win = symbol multiplier × <span className="text-yellow-400 font-bold">bet per line</span> (denomination × multiple).</div>
               <div>• 🐯 <span className="text-yellow-400 font-bold">Wild</span> substitutes for any regular symbol on a line.</div>
-              <div>• 🥁 <span style={{ color: '#CD7F32' }} className="font-bold">Scatter</span> does <span className="text-white font-bold">not</span> pay a win — it only triggers Free Games.</div>
-              <div>• 🐃 <span style={{ color: '#8B5E3C' }} className="font-bold">Buffalo &amp; 💎 Diamond Buffalo</span> count across the whole grid (not on lines).</div>
+              <div>• 🥁 <span style={{ color: '#CD7F32' }} className="font-bold">Scatter</span> does <span className="text-white font-bold">not</span> pay a line win — triggers Free Games only.</div>
+              <div>• 🐃 💎 <span style={{ color: '#8B5E3C' }} className="font-bold">Buffalo symbols</span> count anywhere on the grid (not on paylines).</div>
             </div>
           </Section>
 
-          {/* Symbols */}
-          <Section title="🎰 LINE PAYS — multiplier × bet per line">
+          {/* Line pays */}
+          <Section title="🎰 LINE PAYS — symbol multiplier × bet per line">
             <Row icon="🐉" label="Rồng (Dragon)" value="3=25× · 4=100× · 5=500×" color="#CC0000" />
             <Row icon="🦅" label="Phượng (Phoenix)" value="3=15× · 4=50× · 5=200×" color="#FF8C00" />
             <Row icon="🪷" label="Hoa Sen (Lotus)" value="3=10× · 4=35× · 5=100×" color="#FF69B4" />
@@ -276,57 +277,77 @@ function GameRulesModal({ onClose }: { onClose: () => void }) {
 
           {/* Special symbols */}
           <Section title="⭐ SPECIAL SYMBOLS">
-            <div className="flex flex-col gap-1.5 text-[12px]">
-              <div className="flex gap-2"><span>🥁</span><span><span style={{ color: '#CD7F32' }} className="font-bold">Trống Đồng — FREE GAMES trigger</span><br /><span className="text-gray-400">1 on each of the 3 middle reels (cols 2, 3, 4) = 6 Free Games. No line pay.</span></span></div>
-              <div className="flex gap-2"><span>🐃</span><span><span style={{ color: '#8B5E3C' }} className="font-bold">Trâu — Buffalo Rush trigger</span><br /><span className="text-gray-400">6+ anywhere on the grid → BUFFALO RUSH hold &amp; collect.</span></span></div>
-              <div className="flex gap-2"><span>💎</span><span><span style={{ color: '#00BFFF' }} className="font-bold">Trâu Kim Cương — also counts as Buffalo!</span><br /><span className="text-gray-400">Counts toward the 6 threshold AND can land in Buffalo Rush slots → triggers Tiến Lên (5 prize lines, boosted jackpot odds).</span></span></div>
+            <div className="flex flex-col gap-2 text-[12px]">
+              <div className="flex gap-2">
+                <span>🥁</span>
+                <span>
+                  <span style={{ color: '#CD7F32' }} className="font-bold">Trống Đồng — FREE GAMES trigger</span><br />
+                  <span className="text-gray-400">Land on all 3 middle reels → randomly awards <span className="text-yellow-300">8, 12 or 15</span> free spins with a <span className="text-emerald-400">2×, 3× or 5×</span> win multiplier. All free-spin wins are multiplied. No line pay.</span>
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <span>🐃</span>
+                <span>
+                  <span style={{ color: '#8B5E3C' }} className="font-bold">Trâu — Buffalo</span><br />
+                  <span className="text-gray-400">Up to 3 per column visible. 6+ total on the grid triggers <span className="text-yellow-300">BUFFALO RUSH</span>. Does not pay a line win.</span>
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <span>💎</span>
+                <span>
+                  <span style={{ color: '#00BFFF' }} className="font-bold">Trâu Kim Cương — Diamond Buffalo</span><br />
+                  <span className="text-gray-400">Max 1 per spin. Counts as a Buffalo toward the 6-trigger threshold. Higher value inside Buffalo Rush.</span>
+                </span>
+              </div>
+            </div>
+          </Section>
+
+          {/* Free Games */}
+          <Section title="🥁 FREE GAMES">
+            <div className="text-[12px] text-gray-300 flex flex-col gap-1">
+              <div>• Triggered by 🥁 Scatter on all 3 middle reels.</div>
+              <div>• <span className="text-yellow-300 font-bold">8 spins</span> (most common) · <span className="text-yellow-300 font-bold">12 spins</span> · <span className="text-yellow-300 font-bold">15 spins</span> (rare).</div>
+              <div>• Multiplier: <span className="text-emerald-400 font-bold">2×</span> (most common) · <span className="text-emerald-400 font-bold">3×</span> · <span className="text-emerald-400 font-bold">5×</span> (rare).</div>
+              <div>• <span className="text-white">All wins during free spins are multiplied</span> by the awarded multiplier.</div>
+              <div>• Buffalo Rush can still trigger during Free Games.</div>
             </div>
           </Section>
 
           {/* Buffalo Rush */}
-          <Section title="🐃 BUFFALO RUSH">
+          <Section title="🐃 BUFFALO RUSH (Hold & Collect)">
             <div className="text-[12px] text-gray-300 flex flex-col gap-1">
-              <div>• 5×3 grid of 15 slots. Start with 3 re-spins.</div>
-              <div>• New buffalo landing = reset to 3 re-spins &amp; fill a prize slot.</div>
-              <div>• <span className="text-yellow-400 font-bold">Multiplier:</span> N new buffaloes in one spin → all existing prizes × N.</div>
-              <div>• 💎 Diamond Buffalo in a slot → <span style={{ color: '#00BFFF' }} className="font-bold">Tiến Lên</span> sub-feature (5 lines, higher MINI/MAJOR odds).</div>
+              <div>• Triggered by 6+ Buffalo (🐃 or 💎) anywhere on the 5×3 grid.</div>
+              <div>• Starting buffalo lock in place. 3 re-spins begin.</div>
+              <div>• Each new Buffalo that lands <span className="text-yellow-400">resets re-spins to 3</span> and fills a prize slot.</div>
               <div>• Fill all 15 slots → <span className="text-red-400 font-bold">GRAND JACKPOT!</span></div>
             </div>
           </Section>
 
-          {/* Tiến Lên */}
-          <Section title="💎 TIẾN LÊN (Diamond Feature)">
-            <div className="text-[12px] text-gray-300 flex flex-col gap-1">
-              <div>• Triggered when Diamond Buffalo lands in a Buffalo Rush slot.</div>
-              <div>• Reveals 5 prize lines, one by one.</div>
-              <div>• Boosted odds: MINI ~30%, MAJOR ~9.5%, MAXI ~2%.</div>
-              <div>• All 5 prizes summed and added to that slot — then Rush continues.</div>
-            </div>
-          </Section>
-
           {/* Jackpots */}
-          <Section title="🏆 JACKPOTS — Buffalo Rush only">
-            <div className="text-[11px] text-gray-500 mb-1">All jackpots are awarded inside Buffalo Rush, not on main reels.</div>
+          <Section title="🏆 JACKPOTS">
+            <div className="text-[11px] text-gray-500 mb-1.5">Awarded inside Buffalo Rush based on slot positions filled.</div>
             <div className="text-[12px] flex flex-col gap-1">
-              <Row label="MINI BONUS" value="random slot in Rush" color="#00D187" />
-              <Row label="MAJOR BONUS" value="random slot in Rush" color="#FFD700" />
-              <Row label="MAXI BONUS" value="random slot in Rush" color="#FF8C00" />
-              <Row label="MEGA BONUS" value="random slot in Rush" color="#FF4D6D" />
-              <Row label="GRAND JACKPOT" value="Fill all 15 Rush slots" color="#FFD700" />
+              <Row label="MINI BONUS" value="fixed prize" color="#00D187" />
+              <Row label="MAJOR BONUS" value="fixed prize" color="#FFD700" />
+              <Row label="MAXI BONUS" value="fixed prize" color="#FF8C00" />
+              <Row label="MEGA BONUS" value="grows with every bet" color="#FF4D6D" />
+              <Row label="GRAND JACKPOT" value="fill all 15 Rush slots" color="#FFD700" />
             </div>
           </Section>
 
           {/* Gamble */}
-          <Section title="♠️ GAMBLE MODE">
+          <Section title="♠️ GAMBLE">
             <div className="text-[12px] text-gray-300 flex flex-col gap-1">
-              <div>• After any win, choose to gamble.</div>
-              <div>• Red/Black correct → <span className="text-green-400 font-bold">2× win</span>. Wrong → lose all.</div>
-              <div>• Suit correct → <span className="text-green-400 font-bold">4× win</span>. Wrong → lose all.</div>
-              <div>• Maximum 5 consecutive gambles per win.</div>
+              <div>• Available after any win — choose GAMBLE or TAKE WIN.</div>
+              <div>• Guess <span className="text-yellow-400 font-bold">Red / Black</span> → correct = <span className="text-green-400 font-bold">2× win</span>, wrong = lose all.</div>
+              <div>• Guess <span className="text-yellow-400 font-bold">exact suit</span> → correct = <span className="text-green-400 font-bold">4× win</span>, wrong = lose all.</div>
+              <div>• Max 5 consecutive gambles per win.</div>
             </div>
           </Section>
 
-          <div className="text-center text-[10px] text-gray-600 mt-1">Up to 50 paylines · Left-to-right · Wilds substitute all</div>
+          <div className="text-center text-[10px] text-gray-600 mt-1">
+            Up to 50 paylines · Left-to-right · Wild substitutes all regular symbols
+          </div>
         </div>
       </motion.div>
     </motion.div>

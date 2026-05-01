@@ -142,32 +142,20 @@ export function ControlPanel({ onChangeDenom }: { onChangeDenom?: () => void }) 
   const betPerLine         = useGameStore(s => s.betPerLine);
   const activeLines        = useGameStore(s => s.activeLines);
   const phase              = useGameStore(s => s.phase);
-  const autoSpinActive     = useGameStore(s => s.autoSpinActive);
   const freeSpinsRemaining = useGameStore(s => s.freeSpinsRemaining);
   const isFreeSpinActive   = useGameStore(s => s.isFreeSpinActive);
   const totalWinThisSpin   = useGameStore(s => s.totalWinThisSpin);
   const lastWinAmount      = useGameStore(s => s.lastWinAmount);
   const setBetMultiple     = useGameStore(s => s.setBetMultiple);
   const setLines           = useGameStore(s => s.setLines);
-  const stopAutoSpin       = useGameStore(s => s.stopAutoSpin);
-  const startAutoSpin      = useGameStore(s => s.startAutoSpin);
   const openGamble         = useGameStore(s => s.openGamble);
   const takeWin            = useGameStore(s => s.takeWin);
   const { startSpin }      = useSpinSequence();
 
   const cfg      = getDenomConfig(denomination);
   const totalBet = parseFloat((betPerLine * activeLines).toFixed(2));
-  const canSpin  = (phase === 'IDLE' || phase === 'FREE_SPINS') && !autoSpinActive;
-  const showTakeWin = phase === 'IDLE' && lastWinAmount > 0 && !autoSpinActive;
-
-  /* Stepper helpers */
-  const lineIdx = cfg.lines.indexOf(activeLines);
-  const multIdx = cfg.multiples.indexOf(betMultiple);
-
-  function prevLine() { if (lineIdx > 0) setLines(cfg.lines[lineIdx - 1]); }
-  function nextLine() { if (lineIdx < cfg.lines.length - 1) setLines(cfg.lines[lineIdx + 1]); }
-  function prevMult() { if (multIdx > 0) setBetMultiple(cfg.multiples[multIdx - 1]); }
-  function nextMult() { if (multIdx < cfg.multiples.length - 1) setBetMultiple(cfg.multiples[multIdx + 1]); }
+  const canSpin  = phase === 'IDLE' || phase === 'FREE_SPINS';
+  const showTakeWin = phase === 'IDLE' && lastWinAmount > 0;
 
   return (
     <div className="flex flex-col gap-4 w-full">
@@ -264,57 +252,82 @@ export function ControlPanel({ onChangeDenom }: { onChangeDenom?: () => void }) 
         )}
       </div>
 
-      {/* ── Steppers row: Lines | Multiple ── */}
-      <div className="grid grid-cols-2 gap-4">
-        <Stepper
-          label="Lines"
-          values={cfg.lines}
-          current={activeLines}
-          onPrev={prevLine}
-          onNext={nextLine}
-          disabled={!canSpin}
-          color={cfg.color}
-        />
-        <Stepper
-          label="Multiple"
-          values={cfg.multiples}
-          current={betMultiple}
-          onPrev={prevMult}
-          onNext={nextMult}
-          disabled={!canSpin}
-          color={cfg.color}
-          suffix="×"
-        />
+      {/* ── Lines | Multiple display row ── */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Lines */}
+        <div
+          className="flex flex-col items-center py-3 px-2 rounded-xl gap-1"
+          style={{ background: 'rgba(0,0,0,0.55)', border: `1px solid ${cfg.color}33` }}
+        >
+          <span className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,215,0,0.4)' }}>Lines</span>
+          <div className="flex items-center gap-2 w-full justify-center">
+            <button
+              onClick={() => { const i = cfg.lines.indexOf(activeLines); if (i > 0) setLines(cfg.lines[i-1]); }}
+              disabled={!canSpin || cfg.lines.indexOf(activeLines) === 0}
+              className="text-lg font-black disabled:opacity-20"
+              style={{ color: cfg.color, width: 24 }}
+            >‹</button>
+            <motion.span
+              key={activeLines}
+              className="text-2xl font-black tabular-nums"
+              style={{ color: cfg.color, minWidth: 32, textAlign: 'center' }}
+              initial={{ scale: 1.3, opacity: 0.5 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.15 }}
+            >
+              {activeLines}
+            </motion.span>
+            <button
+              onClick={() => { const i = cfg.lines.indexOf(activeLines); if (i < cfg.lines.length-1) setLines(cfg.lines[i+1]); }}
+              disabled={!canSpin || cfg.lines.indexOf(activeLines) === cfg.lines.length - 1}
+              className="text-lg font-black disabled:opacity-20"
+              style={{ color: cfg.color, width: 24 }}
+            >›</button>
+          </div>
+        </div>
+
+        {/* Multiple */}
+        <div
+          className="flex flex-col items-center py-3 px-2 rounded-xl gap-1"
+          style={{ background: 'rgba(0,0,0,0.55)', border: `1px solid ${cfg.color}33` }}
+        >
+          <span className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,215,0,0.4)' }}>Multiple</span>
+          <div className="flex items-center gap-2 w-full justify-center">
+            <button
+              onClick={() => { const i = cfg.multiples.indexOf(betMultiple); if (i > 0) setBetMultiple(cfg.multiples[i-1]); }}
+              disabled={!canSpin || cfg.multiples.indexOf(betMultiple) === 0}
+              className="text-lg font-black disabled:opacity-20"
+              style={{ color: cfg.color, width: 24 }}
+            >‹</button>
+            <motion.span
+              key={betMultiple}
+              className="text-2xl font-black tabular-nums"
+              style={{ color: cfg.color, minWidth: 40, textAlign: 'center' }}
+              initial={{ scale: 1.3, opacity: 0.5 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.15 }}
+            >
+              ×{betMultiple}
+            </motion.span>
+            <button
+              onClick={() => { const i = cfg.multiples.indexOf(betMultiple); if (i < cfg.multiples.length-1) setBetMultiple(cfg.multiples[i+1]); }}
+              disabled={!canSpin || cfg.multiples.indexOf(betMultiple) === cfg.multiples.length - 1}
+              className="text-lg font-black disabled:opacity-20"
+              style={{ color: cfg.color, width: 24 }}
+            >›</button>
+          </div>
+        </div>
       </div>
 
       {/* ── SPIN row ── */}
-      <div className="flex items-center gap-4">
-
-        {/* MAX BET / Free spins info */}
-        <div className="flex-1 flex flex-col items-center gap-1.5">
-          {isFreeSpinActive ? (
-            <div className="text-center">
-              <div className="text-amber-500 font-black text-sm animate-pulse">🥁 FREE GAMES</div>
-              <div className="text-yellow-300 font-black text-2xl">{freeSpinsRemaining}</div>
-              <div className="text-gray-500 text-[10px]">spins left</div>
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={() => {
-                  setBetMultiple(cfg.multiples[cfg.multiples.length - 1]);
-                  setLines(cfg.lines[cfg.lines.length - 1]);
-                }}
-                disabled={!canSpin}
-                className="w-full py-2.5 rounded-xl text-sm font-black border transition-colors disabled:opacity-30"
-                style={{ borderColor: 'rgba(255,100,0,0.5)', color: '#FF8C00', background: 'rgba(255,100,0,0.12)' }}
-              >
-                MAX BET
-              </button>
-              <span className="text-[10px] text-gray-600">{formatCredits(totalBet)} total</span>
-            </>
-          )}
-        </div>
+      <div className="flex items-center justify-center">
+        {isFreeSpinActive && (
+          <div className="absolute left-0 text-center">
+            <div className="text-amber-500 font-black text-sm animate-pulse">🥁 FREE GAMES</div>
+            <div className="text-yellow-300 font-black text-2xl">{freeSpinsRemaining}</div>
+            <div className="text-gray-500 text-[10px]">spins left</div>
+          </div>
+        )}
 
         {/* SPIN button */}
         <motion.button
@@ -339,34 +352,6 @@ export function ControlPanel({ onChangeDenom }: { onChangeDenom?: () => void }) 
           <span>{phase === 'SPINNING' ? '⏳' : '🎰'}</span>
           <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.12em' }}>SPIN</span>
         </motion.button>
-
-        {/* Auto spin */}
-        <div className="flex-1 flex flex-col gap-1.5 items-center">
-          <span className="text-[10px] text-gray-500 uppercase tracking-widest">Auto</span>
-          <div className="flex flex-col gap-1 w-full">
-            {autoSpinActive ? (
-              <button
-                onClick={stopAutoSpin}
-                className="w-full py-2 rounded-xl text-sm font-black"
-                style={{ background: 'rgba(255,80,80,0.2)', border: '1px solid rgba(255,80,80,0.5)', color: '#ff6060' }}
-              >
-                STOP
-              </button>
-            ) : (
-              [10, 25, 50].map(count => (
-                <button
-                  key={count}
-                  onClick={() => startAutoSpin(count)}
-                  disabled={phase !== 'IDLE'}
-                  className="w-full py-1 rounded-lg text-xs font-bold border transition-colors disabled:opacity-30"
-                  style={{ borderColor: 'rgba(255,215,0,0.25)', color: '#888', background: 'transparent' }}
-                >
-                  {count}×
-                </button>
-              ))
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
