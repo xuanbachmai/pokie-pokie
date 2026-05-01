@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
 import { SpinningReel, CELL_HEIGHT } from './SpinningReel';
+import { PaylineOverlay } from './PaylineOverlay';
 
 const STOP_DELAYS = [800, 1100, 1400, 1700, 2200];
 
@@ -37,6 +38,9 @@ export function ReelGrid() {
           />
         ))}
       </div>
+
+      {/* Payline SVG overlay — drawn on top of the reel grid */}
+      <PaylineOverlay />
 
       {nuggetCount > 0 && (
         <motion.div

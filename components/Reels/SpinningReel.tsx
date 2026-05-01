@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { SymbolId, WinLine } from '@/types/game';
 import { SYMBOLS } from '@/lib/constants';
 import { SymbolSVG } from './SymbolSVG';
+import { useGameStore } from '@/store/gameStore';
 
 export const CELL_HEIGHT = 108;
 const GAP          = 4;
@@ -128,10 +129,17 @@ export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines 
 
   useEffect(() => () => cleanup(), [cleanup]);
 
-  // Build highlighted row set
+  const highlightedWinLineIdx = useGameStore(s => s.highlightedWinLineIdx);
+
+  // Build highlighted row set — only for the currently cycling win line (if any)
   const highlightedRows = new Set<number>();
   if (!spinning) {
-    winLines.forEach(line => {
+    const linesToHighlight =
+      highlightedWinLineIdx !== null && winLines[highlightedWinLineIdx]
+        ? [winLines[highlightedWinLineIdx]]
+        : winLines;  // fallback: highlight all when no cycling active
+
+    linesToHighlight.forEach(line => {
       line.cellPositions.forEach(([c, r]) => {
         if (c === col) highlightedRows.add(r);
       });

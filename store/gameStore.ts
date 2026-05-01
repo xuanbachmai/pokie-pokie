@@ -28,6 +28,7 @@ interface GameState {
   pendingGrid:    SymbolId[][] | null;
   spinningReels:  boolean[];
   buffaloNoteDisplay: { col: number; label: string; key: number } | null;
+  highlightedWinLineIdx: number | null;
 
   lastWinLines:      WinLine[];
   lastScatterResult: ScatterResult | null;
@@ -67,9 +68,10 @@ interface GameState {
   collectGamble:     () => void;
   triggerBonus:      () => void;
   resolveBonus:      (prize: BonusPrize) => void;
-  startAutoSpin:     (count: number) => void;
-  stopAutoSpin:      () => void;
-  decrementAutoSpin: () => void;
+  startAutoSpin:        (count: number) => void;
+  stopAutoSpin:         () => void;
+  decrementAutoSpin:    () => void;
+  setHighlightedWinLine:(idx: number | null) => void;
 }
 
 const INITIAL_GRID: SymbolId[][] = Array.from({ length: 5 }, () =>
@@ -96,6 +98,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   pendingGrid:          null,
   spinningReels:        [false, false, false, false, false],
   buffaloNoteDisplay:   null,
+  highlightedWinLineIdx: null,
 
   lastWinLines:      [],
   lastScatterResult: null,
@@ -226,7 +229,14 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       } else if (scatterResult.triggerBonus && !isFreeSpinActive) {
         // 3 Trống Đồng on middle reels → trigger Free Games
-        set({ phase: 'BONUS_TRIGGER', bonusTriggerBet: totalBet });
+        // Pre-calculate config so the trigger modal can show the real values
+        const freeConfig = buildFreeSpinsConfig();
+        set({
+          phase:               'BONUS_TRIGGER',
+          bonusTriggerBet:     totalBet,
+          freeSpinsRemaining:  freeConfig.spinsAwarded,
+          freeSpinsMultiplier: freeConfig.multiplier,
+        });
 
       } else if (isFreeSpinActive) {
         // During free spins — credit win and check if session is done
@@ -298,15 +308,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
   },
 
-  // Scatter triggered → always FREE_SPINS with 6 games
+  // Config is pre-calculated in completeSpin; just transition to BONUS_ACTIVE
   triggerBonus: () => {
-    const config = buildFreeSpinsConfig();
-    set({
-      phase:               'BONUS_ACTIVE',
-      activeBonusType:     'FREE_SPINS',
-      freeSpinsRemaining:  config.spinsAwarded,
-      freeSpinsMultiplier: config.multiplier,
-    });
+    set({ phase: 'BONUS_ACTIVE', activeBonusType: 'FREE_SPINS' });
   },
 
   resolveBonus: (prize) => {
@@ -329,6 +333,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
     }
   },
+
+  setHighlightedWinLine: (idx) => set({ highlightedWinLineIdx: idx }),
 
   startAutoSpin:     (count) => set({ autoSpinActive: true,  autoSpinCount: count }),
   stopAutoSpin:      ()      => set({ autoSpinActive: false, autoSpinCount: 0 }),
