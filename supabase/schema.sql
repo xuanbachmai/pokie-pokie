@@ -72,7 +72,7 @@ CREATE TRIGGER trg_trim_gamble_history AFTER INSERT ON gamble_history
 FOR EACH ROW EXECUTE FUNCTION trim_gamble_history();
 
 -- ── 5. Aggregation view for /stats dashboard ─────────────────────────
-CREATE OR REPLACE VIEW stats_overview AS
+CREATE OR REPLACE VIEW stats_overview WITH (security_invoker = on) AS
 SELECT
   (SELECT COUNT(*) FROM sessions)                                           AS total_players,
   (SELECT COUNT(*) FROM sessions WHERE created_at >= NOW()-INTERVAL '24h') AS players_today,
@@ -94,7 +94,7 @@ SELECT
   COALESCE((SELECT COUNT(*) FROM events WHERE type='gamble_loss'),0)       AS gamble_losses;
 
 -- ── 6. Hourly activity view (last 48 h) ──────────────────────────────
-CREATE OR REPLACE VIEW hourly_activity AS
+CREATE OR REPLACE VIEW hourly_activity WITH (security_invoker = on) AS
 SELECT
   DATE_TRUNC('hour', created_at)                                  AS hour,
   COUNT(*) FILTER (WHERE type = 'bet')                            AS spins,
