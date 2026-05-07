@@ -150,6 +150,28 @@ export default function StatsPage() {
   const [jackpots, setJackpots] = useState<{ mega: number; grand: number }>({ mega: 0, grand: 0 });
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
+  const [resetMsg,  setResetMsg]  = useState<string | null>(null);
+
+  const resetJackpots = useCallback(async () => {
+    const confirmed = window.confirm(
+      'Reset both jackpots?\n\nGrand → $30,000\nMega  → $5,000\n\nThis affects all players immediately.'
+    );
+    if (!confirmed) return;
+    setResetting(true);
+    setResetMsg(null);
+    const [a, b] = await Promise.all([
+      supabase.from('jackpots').update({ value: 30000 }).eq('id', 'grand'),
+      supabase.from('jackpots').update({ value: 5000  }).eq('id', 'mega'),
+    ]);
+    setResetting(false);
+    if (a.error || b.error) {
+      setResetMsg('❌ Reset failed: ' + (a.error?.message ?? b.error?.message));
+    } else {
+      setResetMsg('✅ Jackpots reset! Grand → $30,000 · Mega → $5,000');
+      setTimeout(() => setResetMsg(null), 5000);
+    }
+  }, []);
 
   const load = useCallback(async () => {
     const [ovRes, hrRes, evRes, jpRes] = await Promise.all([
@@ -226,7 +248,7 @@ export default function StatsPage() {
         ) : (
           <>
             {/* ── Live jackpot meters ── */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-4 mb-3">
               <div className="rounded-2xl p-4 text-center"
                 style={{ background: 'linear-gradient(135deg,#1a0008,#300010)', border: '1px solid rgba(255,77,109,0.3)' }}>
                 <div className="text-[10px] tracking-widest text-gray-500 uppercase mb-1">🐉 Grand Jackpot (live)</div>
@@ -237,6 +259,33 @@ export default function StatsPage() {
                 <div className="text-[10px] tracking-widest text-gray-500 uppercase mb-1">⚡ Mega Jackpot (live)</div>
                 <div className="text-3xl font-black" style={{ color: '#FFD700' }}>{fmt(jackpots.mega)}</div>
               </div>
+            </div>
+
+            {/* ── Jackpot reset button ── */}
+            <div className="flex flex-col items-end gap-2 mb-6">
+              <button
+                onClick={resetJackpots}
+                disabled={resetting}
+                className="px-4 py-2 rounded-xl text-xs font-bold tracking-widest uppercase transition-all"
+                style={{
+                  background: resetting ? 'rgba(255,255,255,0.05)' : 'rgba(255,77,109,0.15)',
+                  border: '1px solid rgba(255,77,109,0.4)',
+                  color: resetting ? '#555' : '#FF4D6D',
+                  cursor: resetting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {resetting ? '⏳ Resetting…' : '🔄 Reset Jackpots to Seed'}
+              </button>
+              {resetMsg && (
+                <div className="text-xs px-3 py-1.5 rounded-lg"
+                  style={{
+                    background: resetMsg.startsWith('✅') ? 'rgba(0,209,135,0.1)' : 'rgba(255,77,109,0.1)',
+                    border: `1px solid ${resetMsg.startsWith('✅') ? 'rgba(0,209,135,0.3)' : 'rgba(255,77,109,0.3)'}`,
+                    color: resetMsg.startsWith('✅') ? '#00D187' : '#FF4D6D',
+                  }}>
+                  {resetMsg}
+                </div>
+              )}
             </div>
 
             {/* ── Players ── */}
