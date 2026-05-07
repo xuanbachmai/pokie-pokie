@@ -28,8 +28,8 @@ export async function contributeToJackpotsDB(
   grandDelta: number,
 ): Promise<void> {
   const calls: Promise<unknown>[] = [];
-  if (megaDelta  > 0) calls.push(supabase.rpc('increment_jackpot', { jackpot_id: 'mega',  delta: megaDelta  }));
-  if (grandDelta > 0) calls.push(supabase.rpc('increment_jackpot', { jackpot_id: 'grand', delta: grandDelta }));
+  if (megaDelta  > 0) calls.push(Promise.resolve(supabase.rpc('increment_jackpot', { jackpot_id: 'mega',  delta: megaDelta  })));
+  if (grandDelta > 0) calls.push(Promise.resolve(supabase.rpc('increment_jackpot', { jackpot_id: 'grand', delta: grandDelta })));
   if (calls.length > 0) await Promise.allSettled(calls);
 }
 
