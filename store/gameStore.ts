@@ -8,6 +8,10 @@ import { calcBetPerLine, getDenomConfig, DENOM_CONFIGS } from '@/lib/constants';
 import { evaluateNuggets, evaluatePaylines, evaluateScatters, spin } from '@/lib/gameEngine';
 import { buildFreeSpinsConfig } from '@/lib/bonusEngine';
 import { useJackpotStore } from './jackpotStore';
+import { contributeToJackpotsDB, winJackpotDB } from '@/lib/jackpotSync';
+import { JACKPOT_CONFIGS } from '@/lib/constants';
+import { JackpotTier } from '@/types/game';
+import { GRAND_JACKPOT_SEED } from './jackpotStore';
 
 interface GameState {
   // ── Denomination / bet system ─────────────────────────────────────────────
@@ -233,6 +237,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       const jackpotStore = useJackpotStore.getState();
       jackpotStore.contributeFromBet(totalBet);
+
+      // ── Write EXACT contribution to DB once per spin (fire-and-forget) ──
+      // Contribution rates: Mega = 1% of bet, Grand = 0.2% of bet
+      const megaContrib  = parseFloat((totalBet * JACKPOT_CONFIGS[JackpotTier.GRAND].contributionRate).toFixed(2));
+      const grandContrib = parseFloat((totalBet * 0.002).toFixed(2));
+      contributeToJackpotsDB(megaContrib, grandContrib).catch(() => {});
+
       const jackpotTier = jackpotStore.checkAndTrigger(result.visibleGrid);
 
       let totalWin = winLines.reduce((s, w) => s + w.payout, 0) + scatterResult.payout;

@@ -8,6 +8,9 @@ import { JackpotTier, SymbolId } from '@/types/game';
 import { SymbolSVG } from '@/components/Reels/SymbolSVG';
 import { getAudio } from '@/lib/audioEngine';
 import { trackJackpotWin, trackWin, trackFeature } from '@/lib/analytics';
+import { winJackpotDB } from '@/lib/jackpotSync';
+import { GRAND_JACKPOT_SEED } from '@/store/jackpotStore';
+const MEGA_SEED = 5000;
 
 // ── Slot value types ──────────────────────────────────────────────────────────
 type SlotKind = 'credits' | 'MINI' | 'MINOR' | 'MAJOR' | 'GRAND' | 'DIAMOND';
@@ -494,6 +497,7 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
               let prize = resolvedSlots.reduce((sum, v) => sum + (v?.amount ?? 0), 0);
               if (allFilled) {
                 const grandAmount = useJackpotStore.getState().triggerGrandJackpot();
+                winJackpotDB('grand', GRAND_JACKPOT_SEED).catch(() => {});
                 prize += grandAmount;
                 useJackpotStore.getState().setGrandJackpotTotal(parseFloat(prize.toFixed(2)));
                 setIsGrandJackpot(true);
@@ -501,9 +505,12 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
                 trackJackpotWin('grand', parseFloat(prize.toFixed(2)));
               } else if (resolvedSlots.some(s => s && s.kind !== 'credits' && s.kind !== 'DIAMOND')) {
                 getAudio().playCelebration('mega');
-                // Track any tier jackpot wins
+                // Track any tier jackpot wins; reset Mega in DB if won
                 resolvedSlots.forEach(s => {
-                  if (s && s.kind === 'GRAND') trackJackpotWin('mega', s.amount);
+                  if (s && s.kind === 'GRAND') {
+                    trackJackpotWin('mega', s.amount);
+                    winJackpotDB('mega', MEGA_SEED).catch(() => {});
+                  }
                   if (s && s.kind === 'MINOR') trackJackpotWin('minor', s.amount);
                   if (s && s.kind === 'MAJOR') trackJackpotWin('major', s.amount);
                   if (s && s.kind === 'MINI')  trackJackpotWin('mini', s.amount);
@@ -588,6 +595,7 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
               if (allFilled) {
                 // All 5 columns filled → trigger Grand Jackpot!
                 grandBonus = useJackpotStore.getState().triggerGrandJackpot();
+                winJackpotDB('grand', GRAND_JACKPOT_SEED).catch(() => {});
                 const tienLenTotal = resolvedPrizes.reduce((s, p) => s + (p?.amount ?? 0), 0);
                 useJackpotStore.getState().setGrandJackpotTotal(
                   parseFloat((tienLenTotal + grandBonus).toFixed(2))
