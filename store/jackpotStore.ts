@@ -154,15 +154,15 @@ export const useJackpotStore = create<JackpotState>((set, get) => ({
     }));
   },
 
-  // ── Supabase sync: take the higher of local vs server (never go backwards) ──
+  // ── Supabase sync: always trust the server value (allows jackpot resets to propagate) ──
   syncMegaJackpot: (value) => set(state => ({
     values: {
       ...state.values,
-      [JackpotTier.GRAND]: Math.max(state.values[JackpotTier.GRAND], value),
+      [JackpotTier.GRAND]: value,
     },
   })),
 
   syncGrandJackpot: (value) => set(state => ({
-    grandJackpotValue: Math.max(state.grandJackpotValue, value),
+    grandJackpotValue: value,
   })),
 }));

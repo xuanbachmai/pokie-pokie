@@ -21,15 +21,16 @@ export async function fetchJackpotValues(): Promise<{ mega: number; grand: numbe
 
 // ── Atomically add a bet contribution to both jackpots ───────────────────────
 // Uses DB-side function so concurrent bets don't overwrite each other.
+// IMPORTANT: Only call the RPC when delta > 0. A zero-delta UPDATE still sets
+// updated_at = NOW() in Postgres, which fires a realtime event and can cause loops.
 export async function contributeToJackpotsDB(
   megaDelta: number,
   grandDelta: number,
 ): Promise<void> {
-  // Fire both RPCs in parallel — don't wait for result (optimistic local update already applied)
-  await Promise.allSettled([
-    supabase.rpc('increment_jackpot', { jackpot_id: 'mega',  delta: megaDelta  }),
-    supabase.rpc('increment_jackpot', { jackpot_id: 'grand', delta: grandDelta }),
-  ]);
+  const calls: Promise<unknown>[] = [];
+  if (megaDelta  > 0) calls.push(supabase.rpc('increment_jackpot', { jackpot_id: 'mega',  delta: megaDelta  }));
+  if (grandDelta > 0) calls.push(supabase.rpc('increment_jackpot', { jackpot_id: 'grand', delta: grandDelta }));
+  if (calls.length > 0) await Promise.allSettled(calls);
 }
 
 // ── Reset jackpot to seed when won ───────────────────────────────────────────
