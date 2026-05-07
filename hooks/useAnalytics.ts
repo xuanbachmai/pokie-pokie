@@ -1,0 +1,86 @@
+'use client';
+/**
+ * useAnalytics
+ * Mount once in SlotMachine. Watches Zustand stores and fires analytics events
+ * automatically — no changes needed in the core game logic.
+ */
+import { useEffect, useRef } from 'react';
+import { useGameStore } from '@/store/gameStore';
+import {
+  getOrCreateSessionId,
+  trackBet,
+  trackWin,
+  trackFeature,
+  trackJackpotWin,
+  trackGamble,
+} from '@/lib/analytics';
+
+export function useAnalytics() {
+  // Ensure session exists on first render
+  useEffect(() => { getOrCreateSessionId(); }, []);
+
+  // Track refs to detect changes
+  const prevPhaseRef         = useRef<string>('');
+  const prevWinRef           = useRef<number>(0);
+  const prevBonusTypeRef     = useRef<string | null>(null);
+  const prevDiamondRushRef   = useRef<boolean>(false);
+
+  useEffect(() => {
+    const unsub = useGameStore.subscribe(state => {
+      const {
+        phase, lastWinAmount, activeBonusType,
+        betPerLine, activeLines, denomination,
+        gambleAmount,
+      } = state;
+
+      const totalBet = betPerLine * activeLines;
+
+      // ── Bet: new spin started ────────────────────────────────────────
+      if (phase === 'SPINNING' && prevPhaseRef.current !== 'SPINNING') {
+        trackBet(totalBet, denomination, activeLines);
+      }
+
+      // ── Win: lastWinAmount just became non-zero ──────────────────────
+      if (lastWinAmount > 0 && prevWinRef.current === 0) {
+        trackWin(
+          lastWinAmount,
+          phase === 'FREE_SPINS' ? 'free_spin' : 'payline',
+        );
+      }
+
+      // ── Bonus feature triggered ──────────────────────────────────────
+      if (activeBonusType !== prevBonusTypeRef.current) {
+        if (activeBonusType === 'NUGGET_HOLD') trackFeature('buffalo_rush');
+        if (activeBonusType === 'FREE_SPINS')  trackFeature('free_spins');
+      }
+
+      prevPhaseRef.current     = phase;
+      prevWinRef.current       = lastWinAmount;
+      prevBonusTypeRef.current = activeBonusType;
+    });
+
+    return unsub;
+  }, []);
+
+  // ── Gamble outcomes ──────────────────────────────────────────────────
+  useEffect(() => {
+    // Subscribe to gamble result — watch resolveGamble side-effects
+    // We watch gambleAmount going to 0 (loss) or doubling (win)
+    let prevGambleAmount = 0;
+    const unsub = useGameStore.subscribe(state => {
+      const { phase, gambleAmount } = state;
+      if ((phase as string) === 'GAMBLE_ACTIVE') {
+        prevGambleAmount = gambleAmount;
+      } else if (prevGambleAmount > 0 && (phase as string) !== 'GAMBLE_ACTIVE') {
+        // Gamble just resolved
+        const won = gambleAmount > prevGambleAmount;
+        const lost = gambleAmount === 0 && prevGambleAmount > 0;
+        if (won || lost) {
+          trackGamble(won, prevGambleAmount);
+        }
+        prevGambleAmount = 0;
+      }
+    });
+    return unsub;
+  }, []);
+}

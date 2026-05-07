@@ -6,6 +6,7 @@ import { resolveRedBlack, resolveSuit } from '@/lib/gambleEngine';
 import { CardDraw } from '@/types/game';
 import { formatCredits } from '@/lib/utils';
 import { useGambleAudio } from '@/hooks/useGameAudio';
+import { supabase, GambleHistoryRow } from '@/lib/supabase';
 
 /* ── Symbol helpers ─────────────────────────────────────────────────────── */
 const SUIT_SYMBOL: Record<CardDraw['suit'], string> = {
@@ -136,15 +137,52 @@ export function GambleModal() {
 
   const show = phase === 'GAMBLE_ACTIVE';
 
-  // Reset state when the modal opens for a new gamble session
+  // ── Load last 5 global draws from Supabase on open ───────────────
   useEffect(() => {
-    if (show) {
-      setFlipped(false);
-      setCard(null);
-      setResult(null);
-      setHistory([]);
-    }
+    if (!show) return;
+    setFlipped(false);
+    setCard(null);
+    setResult(null);
+
+    supabase
+      .from('gamble_history')
+      .select('id, suit, value, color, won')
+      .order('id', { ascending: false })
+      .limit(5)
+      .then(({ data }) => {
+        if (!data) return;
+        const entries: HistoryEntry[] = (data as GambleHistoryRow[])
+          .reverse()  // oldest first for display
+          .map(row => ({
+            id:   historyId.current++,
+            won:  row.won,
+            card: { suit: row.suit, value: row.value, color: row.color },
+          }));
+        setHistory(entries);
+      });
   }, [show]);
+
+  // ── Realtime: update history when another player draws ───────────
+  useEffect(() => {
+    const channel = supabase
+      .channel('gamble-history-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'gamble_history' },
+        (payload) => {
+          const row = payload.new as GambleHistoryRow;
+          const entry: HistoryEntry = {
+            id:   historyId.current++,
+            won:  row.won,
+            card: { suit: row.suit, value: row.value, color: row.color },
+          };
+          setHistory(prev => [...prev.slice(-4), entry]);
+        },
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   function handleGuess(type: 'red' | 'black' | CardDraw['suit']) {
     if (flipped) return;
@@ -152,11 +190,17 @@ export function GambleModal() {
       ? resolveRedBlack(type, gambleAmount)
       : resolveSuit(type, gambleAmount);
 
-    const entry: HistoryEntry = { card: outcome.card, won: outcome.won, id: historyId.current++ };
     setCard(outcome.card);
     setFlipped(true);
     setResult(outcome.won ? 'win' : 'lose');
-    setHistory(prev => [...prev.slice(-4), entry]);
+
+    // Persist to Supabase — realtime will update all clients' history panels
+    supabase.from('gamble_history').insert({
+      suit:  outcome.card.suit,
+      value: outcome.card.value,
+      color: outcome.card.color,
+      won:   outcome.won,
+    }).then();   // fire-and-forget
 
     // Sound: flip immediately, then win/lose after card reveals (~550 ms)
     onFlip();

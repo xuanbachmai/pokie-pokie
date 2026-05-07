@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SymbolId, WinLine } from '@/types/game';
 import { SYMBOLS } from '@/lib/constants';
 import { SymbolSVG } from './SymbolSVG';
@@ -60,23 +61,28 @@ interface Props {
   spinning: boolean;
   stopDelay: number;
   winLines: WinLine[];
+  anticipation?: 'scatter' | 'buffalo' | false;
 }
 
-export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines }: Props) {
-  const [strip, setStrip]   = useState<SymbolId[]>(() => buildStrip(finalSymbols));
-  const [offset, setOffset] = useState(STOP_OFFSET);   // px translateY
+export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines, anticipation }: Props) {
+  const [strip, setStrip]       = useState<SymbolId[]>(() => buildStrip(finalSymbols));
+  const [offset, setOffset]     = useState(STOP_OFFSET);
   const [transitioning, setTransitioning] = useState(false);
   const [blurAmount, setBlurAmount]       = useState(0);
+  const [bouncing, setBouncing]           = useState(false); // post-stop bounce
 
   const prevSpinning = useRef(false);
   const rafRef       = useRef<number | null>(null);
   const t1Ref        = useRef<ReturnType<typeof setTimeout> | null>(null);
   const t2Ref        = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const t3Ref        = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reelRef      = useRef<HTMLDivElement>(null); // for CSS shake
 
   const cleanup = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     if (t1Ref.current)  clearTimeout(t1Ref.current);
     if (t2Ref.current)  clearTimeout(t2Ref.current);
+    if (t3Ref.current)  clearTimeout(t3Ref.current);
   }, []);
 
   useEffect(() => {
@@ -84,41 +90,47 @@ export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines 
     if (spinning && !prevSpinning.current) {
       const newStrip = buildStrip(finalSymbols);
       setStrip(newStrip);
+      setBouncing(false);
 
-      // 1. Instantly position strip at START (far above, showing randoms below finals)
       setTransitioning(false);
-      setBlurAmount(4);
+      setBlurAmount(8);   // heavier initial blur
       setOffset(START_OFFSET);
 
-      // 2. Next tick: animate DOWN to STOP_OFFSET (0) — strip falls top-to-bottom
       rafRef.current = requestAnimationFrame(() => {
         rafRef.current = requestAnimationFrame(() => {
           setTransitioning(true);
           setOffset(STOP_OFFSET);
 
-          // Reduce blur halfway through
-          t1Ref.current = setTimeout(() => setBlurAmount(1.5), stopDelay * 0.65);
-          // Clear blur at the end
-          t2Ref.current = setTimeout(() => setBlurAmount(0), stopDelay * 0.92);
+          // Blur fade schedule
+          t1Ref.current = setTimeout(() => setBlurAmount(3),   stopDelay * 0.55);
+          t2Ref.current = setTimeout(() => setBlurAmount(0.8), stopDelay * 0.80);
+          t3Ref.current = setTimeout(() => setBlurAmount(0),   stopDelay * 0.95);
         });
       });
     }
 
-    // SPIN STOP (forced early)
+    // SPIN STOP (natural or forced)
     if (!spinning && prevSpinning.current) {
       cleanup();
       setTransitioning(false);
       setBlurAmount(0);
-      // Hard snap to final
       const newStrip = buildStrip(finalSymbols);
       setStrip(newStrip);
       setOffset(STOP_OFFSET);
+
+      // Post-stop bounce + shake
+      setBouncing(true);
+      if (reelRef.current) {
+        reelRef.current.classList.remove('reel-shake');
+        void reelRef.current.offsetWidth; // force reflow to restart animation
+        reelRef.current.classList.add('reel-shake');
+      }
+      setTimeout(() => setBouncing(false), 220);
     }
 
     prevSpinning.current = spinning;
   });
 
-  // When finalSymbols change while not spinning, just update display
   useEffect(() => {
     if (!spinning) {
       setStrip(buildStrip(finalSymbols));
@@ -131,13 +143,12 @@ export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines 
 
   const highlightedWinLineIdx = useGameStore(s => s.highlightedWinLineIdx);
 
-  // Build highlighted row set — only for the currently cycling win line (if any)
   const highlightedRows = new Set<number>();
   if (!spinning) {
     const linesToHighlight =
       highlightedWinLineIdx !== null && winLines[highlightedWinLineIdx]
         ? [winLines[highlightedWinLineIdx]]
-        : winLines;  // fallback: highlight all when no cycling active
+        : winLines;
 
     linesToHighlight.forEach(line => {
       line.cellPositions.forEach(([c, r]) => {
@@ -146,15 +157,18 @@ export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines 
     });
   }
 
-  // easing: fast acceleration then very smooth deceleration with tiny bounce
-  // cubic-bezier(0.15, 0.8, 0.7, 1) → starts fast, ends gently
-  // We add a custom spring-like end by using two-phase transition
   const transitionStyle = transitioning
-    ? `transform ${stopDelay}ms cubic-bezier(0.05, 0.6, 0.6, 1.04)`
+    ? `transform ${stopDelay}ms cubic-bezier(0.08, 0.65, 0.45, 1.0)`
     : 'none';
+
+  // Bounce offset: overshoot -8px → settle to 0
+  const bounceTransform = bouncing
+    ? 'translateY(-8px)'
+    : 'translateY(0px)';
 
   return (
     <div
+      ref={reelRef}
       style={{
         height: CELL_HEIGHT * 3 + GAP * 2,
         borderRadius: 10,
@@ -168,10 +182,11 @@ export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines 
           display: 'flex',
           flexDirection: 'column',
           gap: GAP,
-          transform: `translateY(${offset}px)`,
-          transition: transitionStyle,
-          filter: blurAmount > 0 ? `blur(${blurAmount}px)` : 'none',
-          willChange: 'transform',
+          transform: `translateY(${offset}px) ${bounceTransform}`,
+          transition: bouncing
+            ? 'transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1)'
+            : transitionStyle,
+          filter: blurAmount > 0 ? `blur(${blurAmount}px) ${blurAmount > 3 ? 'scaleY(1.04)' : ''}` : 'none',
         }}
       >
         {strip.map((symId, idx) => (
@@ -221,17 +236,89 @@ export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines 
       <div
         style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: 32,
-          background: 'linear-gradient(180deg, rgba(5,0,2,0.92) 0%, transparent 100%)',
+          background: 'linear-gradient(180deg, rgba(1,8,3,0.92) 0%, transparent 100%)',
           pointerEvents: 'none', zIndex: 20,
         }}
       />
       <div
         style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: 32,
-          background: 'linear-gradient(0deg, rgba(5,0,2,0.92) 0%, transparent 100%)',
+          background: 'linear-gradient(0deg, rgba(1,8,3,0.92) 0%, transparent 100%)',
           pointerEvents: 'none', zIndex: 20,
         }}
       />
+
+      {/* ── Anticipation overlay ── */}
+      <AnimatePresence>
+        {spinning && anticipation && (
+          <motion.div
+            key="anticipation"
+            style={{
+              position: 'absolute', inset: 0,
+              borderRadius: 10,
+              zIndex: 25,
+              pointerEvents: 'none',
+              border: `3px solid ${anticipation === 'scatter' ? '#FFD700' : '#FF6B00'}`,
+              overflow: 'hidden',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* Pulsing coloured glow */}
+            <motion.div
+              style={{
+                position: 'absolute', inset: 0,
+                background: anticipation === 'scatter'
+                  ? 'radial-gradient(ellipse at center, rgba(255,215,0,0.18) 0%, transparent 70%)'
+                  : 'radial-gradient(ellipse at center, rgba(255,100,0,0.22) 0%, transparent 70%)',
+              }}
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 0.5, repeat: Infinity }}
+            />
+
+            {/* Vertical scan lines — speed effect */}
+            <motion.div
+              style={{
+                position: 'absolute', inset: 0,
+                background: anticipation === 'scatter'
+                  ? 'repeating-linear-gradient(180deg, transparent 0px, transparent 10px, rgba(255,215,0,0.06) 10px, rgba(255,215,0,0.06) 12px)'
+                  : 'repeating-linear-gradient(180deg, transparent 0px, transparent 10px, rgba(255,100,0,0.08) 10px, rgba(255,100,0,0.08) 12px)',
+              }}
+              animate={{ backgroundPositionY: ['0px', '24px'] }}
+              transition={{ duration: 0.18, repeat: Infinity, ease: 'linear' }}
+            />
+
+            {/* Icon badge */}
+            <motion.div
+              style={{
+                position: 'absolute',
+                top: '50%', left: '50%',
+                transform: 'translate(-50%, -50%)',
+                fontSize: 36,
+                filter: `drop-shadow(0 0 12px ${anticipation === 'scatter' ? '#FFD700' : '#FF6B00'})`,
+              }}
+              animate={{ scale: [0.85, 1.15, 0.85], rotate: anticipation === 'buffalo' ? [-5, 5, -5] : [0, 0, 0] }}
+              transition={{ duration: 0.5, repeat: Infinity }}
+            >
+              {anticipation === 'scatter' ? '🥁' : '🐃'}
+            </motion.div>
+
+            {/* Corner border flash */}
+            <motion.div
+              style={{
+                position: 'absolute', inset: 0,
+                borderRadius: 10,
+                boxShadow: anticipation === 'scatter'
+                  ? '0 0 24px rgba(255,215,0,0.6), inset 0 0 16px rgba(255,215,0,0.15)'
+                  : '0 0 24px rgba(255,100,0,0.6), inset 0 0 16px rgba(255,100,0,0.18)',
+              }}
+              animate={{ opacity: [0.6, 1, 0.6] }}
+              transition={{ duration: 0.4, repeat: Infinity }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

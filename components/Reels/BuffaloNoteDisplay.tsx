@@ -2,19 +2,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
 
-// Do = C5, Re = D5 … mapped to colours for visual variety
-const NOTE_COLORS: Record<string, string> = {
-  Do:  '#FF6B6B',
-  Re:  '#FF9F43',
-  Mi:  '#FECA57',
-  Fa:  '#48DBFB',
-  Sol: '#1DD1A1',
-  La:  '#A29BFE',
-  Si:  '#FD79A8',
-};
-
-// Each reel column is 1/5 of the grid width.
-// We position the bubble at (col + 0.5) / 5 * 100% from left.
 function colToPercent(col: number) {
   return `${(col + 0.5) * 20}%`;
 }
@@ -42,27 +29,24 @@ export function BuffaloNoteDisplay() {
             exit={{ opacity: 0, y: -80, scale: 0.8 }}
             transition={{ duration: 0.55, ease: 'easeOut' }}
           >
-            {/* Solfège label pill */}
+            {/* Buffalo note sparkle — no text label */}
             <motion.div
-              className="mt-0.5 px-2.5 py-0.5 rounded-full font-black text-sm tracking-wide"
               style={{
-                background: `${NOTE_COLORS[note.label] ?? '#FFD700'}22`,
-                border: `2px solid ${NOTE_COLORS[note.label] ?? '#FFD700'}`,
-                color: NOTE_COLORS[note.label] ?? '#FFD700',
-                boxShadow: `0 0 12px ${NOTE_COLORS[note.label] ?? '#FFD700'}88`,
-                textShadow: `0 0 8px ${NOTE_COLORS[note.label] ?? '#FFD700'}`,
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: '#FFD700',
+                boxShadow: '0 0 12px #FFD70088',
               }}
               animate={{
                 boxShadow: [
-                  `0 0 8px ${NOTE_COLORS[note.label] ?? '#FFD700'}66`,
-                  `0 0 20px ${NOTE_COLORS[note.label] ?? '#FFD700'}cc`,
-                  `0 0 8px ${NOTE_COLORS[note.label] ?? '#FFD700'}66`,
+                  '0 0 8px #FFD70066',
+                  '0 0 20px #FFD700cc',
+                  '0 0 8px #FFD70066',
                 ],
               }}
               transition={{ duration: 0.5, repeat: 1 }}
-            >
-              {note.label}
-            </motion.div>
+            />
           </motion.div>
         )}
       </AnimatePresence>

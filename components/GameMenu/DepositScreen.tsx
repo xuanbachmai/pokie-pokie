@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
 import { formatCredits } from '@/lib/utils';
+import { trackDeposit } from '@/lib/analytics';
 
 const DEPOSIT_OPTIONS = [
   { amount: 10,   label: '$10',   emoji: '🪙', color: '#B87333', glow: 'rgba(184,115,51,0.6)' },
@@ -28,6 +29,7 @@ export function DepositScreen({ onComplete, isTopUp = false }: { onComplete: () 
   function handleConfirm() {
     if (chosen === null) return;
     addDeposit(chosen);
+    trackDeposit(chosen);
     setConfirmed(true);
     setTimeout(() => {
       if (!isTopUp) completeDeposit();
@@ -38,7 +40,7 @@ export function DepositScreen({ onComplete, isTopUp = false }: { onComplete: () 
   return (
     <motion.div
       className="fixed inset-0 z-[400] flex flex-col items-center justify-center p-6"
-      style={{ background: 'linear-gradient(160deg, #0a0018 0%, #0D0005 50%, #0a001a 100%)' }}
+      style={{ background: 'linear-gradient(160deg, #010e05 0%, #020E06 50%, #011408 100%)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -47,7 +49,7 @@ export function DepositScreen({ onComplete, isTopUp = false }: { onComplete: () 
         <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full opacity-10"
           style={{ background: 'radial-gradient(circle, #FFD700, transparent)', filter: 'blur(60px)' }} />
         <div className="absolute bottom-1/4 right-1/4 w-48 h-48 rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #CC0000, transparent)', filter: 'blur(50px)' }} />
+          style={{ background: 'radial-gradient(circle, #00C07A, transparent)', filter: 'blur(50px)' }} />
       </div>
 
       <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-6">
@@ -55,21 +57,20 @@ export function DepositScreen({ onComplete, isTopUp = false }: { onComplete: () 
         <div className="text-center">
           <motion.h1
             className="text-3xl font-black tracking-widest"
-            style={{ background: 'linear-gradient(90deg, #FFD700, #CC0000, #FFD700)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundSize: '200%' }}
+            style={{ background: 'linear-gradient(90deg, #00C07A, #FFD700, #00C07A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundSize: '200%' }}
             animate={{ backgroundPosition: ['0%', '100%', '0%'] }}
             transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
           >
-            🏮 VIETNAM MAZE
+            🌾 VIETNAM MAZE
           </motion.h1>
-          <p className="text-[10px] text-gray-500 tracking-[0.3em] uppercase mt-1">Mekong Treasures</p>
         </div>
 
         {/* Divider */}
-        <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.4), transparent)' }} />
+        <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(0,192,122,0.4), transparent)' }} />
 
         {/* Heading */}
         <div className="text-center">
-          <div className="text-base font-black tracking-widest" style={{ color: '#FFD700' }}>
+          <div className="text-base font-black tracking-widest" style={{ color: '#00C07A' }}>
             💰 {isTopUp ? 'ADD MORE CREDITS' : 'SELECT DEPOSIT AMOUNT'}
           </div>
           <div className="text-[10px] text-gray-500 mt-1">Credits are for entertainment only</div>

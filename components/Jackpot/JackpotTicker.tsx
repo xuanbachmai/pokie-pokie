@@ -44,15 +44,18 @@ export function JackpotTicker({ tier, value }: Props) {
     >
       {/* Label row */}
       <div className="flex items-center gap-1">
-        <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: config.color }}>
+        <span
+          className="text-sm tracking-widest uppercase"
+          style={{ color: config.color, fontFamily: 'var(--font-jackpot)', letterSpacing: '0.18em' }}
+        >
           {config.label}
         </span>
       </div>
 
       {/* Value */}
       <motion.span
-        className="text-base font-black tabular-nums"
-        style={{ color: config.color }}
+        className="text-lg tabular-nums font-bold"
+        style={{ color: config.color, fontFamily: 'var(--font-amount)' }}
         animate={pulseKey > 0 ? { scale: [1, 1.12, 1] } : {}}
         transition={{ duration: 0.4, ease: 'easeOut' }}
       >

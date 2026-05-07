@@ -13,6 +13,8 @@ import { useAutoSpin } from '@/hooks/useAutoSpin';
 import { useGameStore } from '@/store/gameStore';
 import { useSpinSequence } from '@/hooks/useSpinSequence';
 import { useGameAudio } from '@/hooks/useGameAudio';
+import { useJackpotSync } from '@/hooks/useJackpotSync';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { getAudio } from '@/lib/audioEngine';
 import { DepositScreen } from '@/components/GameMenu/DepositScreen';
 import { DenomSelector } from '@/components/GameMenu/DenomSelector';
@@ -30,21 +32,35 @@ const DeltaBackground = dynamic(
 );
 
 function KeyboardControls() {
-  const phase = useGameStore(s => s.phase);
+  const phase      = useGameStore(s => s.phase);
+  const balance    = useGameStore(s => s.balance);
+  const betPerLine = useGameStore(s => s.betPerLine);
+  const activeLines = useGameStore(s => s.activeLines);
+  const isFreeSpinActive = useGameStore(s => s.isFreeSpinActive);
   const { startSpin } = useSpinSequence();
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.code !== 'Space') return;
       e.preventDefault();
-      if (phase === 'IDLE' || phase === 'FREE_SPINS') {
-        startSpin();
+
+      const canSpin = phase === 'IDLE' || phase === 'FREE_SPINS';
+      if (!canSpin) return; // not in a spinnable phase — do nothing (no sound, no music stop)
+
+      const totalBet = parseFloat((betPerLine * activeLines).toFixed(2));
+      if (!isFreeSpinActive && balance < totalBet) {
+        // Out of credit — play error sound, don't spin
+        const audio = getAudio();
+        if (audio.ready) audio.playInsufficientFunds();
+        return;
       }
+
+      startSpin();
     }
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [phase, startSpin]);
+  }, [phase, balance, betPerLine, activeLines, isFreeSpinActive, startSpin]);
 
   return null;
 }
@@ -89,6 +105,10 @@ function FreeSpinAutoRunner() {
 }
 
 export function SlotMachine() {
+  // ── Supabase: sync shared jackpots + analytics ───────────────────────────
+  useJackpotSync();
+  useAnalytics();
+
   const [rulesOpen,    setRulesOpen]    = useState(false);
   const [isTopUpMode,  setIsTopUpMode]  = useState(false);
   const [muted,        setMuted]        = useState(false);
@@ -112,7 +132,7 @@ export function SlotMachine() {
   const showGame = !showDeposit && !showDenom && denomSelected;
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-x-hidden overflow-y-auto">
       <DeltaBackground />
 
       {/* ── Lobby screens (z-[400] overlay) ── */}
@@ -151,10 +171,9 @@ export function SlotMachine() {
 
               <div className="text-center flex-1">
                 <h1 className="text-3xl font-black tracking-widest"
-                  style={{ background: 'linear-gradient(90deg, #FFD700, #CC0000, #FFD700)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundSize: '200%' }}>
-                  🏮 VIETNAM MAZE 🏮
+                  style={{ background: 'linear-gradient(90deg, #00C07A, #FFD700, #00C07A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundSize: '200%' }}>
+                  🌾 VIETNAM MAZE 🌾
                 </h1>
-                <p className="text-xs text-gray-500 tracking-widest uppercase mt-0.5">Mekong Treasures</p>
               </div>
 
               {/* Right buttons: SOUND + RULES */}
@@ -175,9 +194,6 @@ export function SlotMachine() {
                   }}
                 >
                   <span className="text-xl leading-none">{muted ? '🔇' : '🔊'}</span>
-                  <span className="text-[9px] font-black tracking-wide leading-none mt-1">
-                    {muted ? 'MUTED' : 'SOUND'}
-                  </span>
                 </button>
 
                 <button
@@ -204,7 +220,7 @@ export function SlotMachine() {
             {/* Control panel */}
             <div
               className="rounded-2xl p-5"
-              style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,215,0,0.15)' }}
+              style={{ background: 'rgba(0,16,7,0.72)', border: '1px solid rgba(0,192,122,0.18)' }}
             >
               <ControlPanel onChangeDenom={() => setShowDenom(true)} />
             </div>
@@ -236,7 +252,7 @@ function GameRulesModal({ onClose }: { onClose: () => void }) {
     >
       <motion.div
         className="w-full max-w-sm rounded-2xl overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #1a0005, #0a0020)', border: '1px solid rgba(255,215,0,0.35)' }}
+        style={{ background: 'linear-gradient(160deg, #011008, #020e20)', border: '1px solid rgba(0,192,122,0.35)' }}
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.85, opacity: 0 }}
@@ -245,58 +261,70 @@ function GameRulesModal({ onClose }: { onClose: () => void }) {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3"
-          style={{ background: 'linear-gradient(90deg, rgba(204,0,0,0.4), rgba(255,215,0,0.15), rgba(204,0,0,0.4))' }}>
-          <span className="text-base font-black" style={{ color: '#FFD700' }}>📖 GAME RULES</span>
+          style={{ background: 'linear-gradient(90deg, rgba(0,160,80,0.35), rgba(255,215,0,0.15), rgba(0,160,80,0.35))' }}>
+          <span className="text-base font-black" style={{ color: '#00C07A' }}>📖 GAME RULES</span>
           <button onClick={onClose} className="text-gray-400 text-xl leading-none hover:text-white">×</button>
         </div>
 
         <div className="px-5 py-4 flex flex-col gap-4 max-h-[75vh] overflow-y-auto text-sm">
 
+          {/* Bet structure */}
+          <Section title="💰 BET STRUCTURE">
+            <div className="text-[12px] text-gray-300 flex flex-col gap-1">
+              <div>• Choose a <span className="text-yellow-400 font-bold">Denomination</span> (1¢ – $2), then set your <span className="text-yellow-400 font-bold">Multiple</span> and number of active <span className="text-yellow-400 font-bold">Lines</span>.</div>
+              <div>• <span className="text-white font-bold">Total Bet</span> = Denomination × Multiple × Lines</div>
+              <div>• Up to <span className="text-yellow-400 font-bold">50 paylines</span> available depending on denomination.</div>
+              <div>• All pays shown below are <span className="text-emerald-400 font-bold">multiplied by Bet Per Line</span>.</div>
+            </div>
+          </Section>
+
           {/* How wins work */}
           <Section title="📏 HOW WINS WORK">
             <div className="text-[12px] text-gray-300 flex flex-col gap-1">
-              <div>• Wins pay <span className="text-yellow-400 font-bold">left-to-right on paylines</span> — 3, 4 or 5 matching symbols starting from reel 1.</div>
-              <div>• Win = symbol multiplier × <span className="text-yellow-400 font-bold">bet per line</span> (denomination × multiple).</div>
-              <div>• 🐯 <span className="text-yellow-400 font-bold">Wild</span> substitutes for any regular symbol on a line.</div>
-              <div>• 🥁 <span style={{ color: '#CD7F32' }} className="font-bold">Scatter</span> does <span className="text-white font-bold">not</span> pay a line win — triggers Free Games only.</div>
-              <div>• 🐃 💎 <span style={{ color: '#8B5E3C' }} className="font-bold">Buffalo symbols</span> count anywhere on the grid (not on paylines).</div>
+              <div>• Wins pay <span className="text-yellow-400 font-bold">left-to-right</span> — 3, 4 or 5 matching symbols starting from reel 1.</div>
+              <div>• Only <span className="text-yellow-400 font-bold">active paylines</span> can win. Inactive lines are not evaluated.</div>
+              <div>• 🐯 <span className="text-yellow-400 font-bold">Wild (Hổ)</span> substitutes for any regular symbol. Boosts wins when mixed with other symbols.</div>
+              <div>• 🥁 <span style={{ color: '#CD7F32' }} className="font-bold">Scatter (Trống Đồng)</span>, 🐃 <span style={{ color: '#8B5E3C' }} className="font-bold">Buffalo</span>, and 💎 <span style={{ color: '#00BFFF' }} className="font-bold">Diamond Buffalo</span> do <span className="text-red-400">not</span> pay on lines — they trigger features only.</div>
+              <div>• Highest win per payline only (no stacking on same line).</div>
             </div>
           </Section>
 
           {/* Line pays */}
-          <Section title="🎰 LINE PAYS — symbol multiplier × bet per line">
-            <Row icon="🐉" label="Rồng (Dragon)" value="3=25× · 4=100× · 5=500×" color="#CC0000" />
-            <Row icon="🦅" label="Phượng (Phoenix)" value="3=15× · 4=50× · 5=200×" color="#FF8C00" />
-            <Row icon="🪷" label="Hoa Sen (Lotus)" value="3=10× · 4=35× · 5=100×" color="#FF69B4" />
-            <Row icon="🏮" label="Đèn Lồng (Lantern)" value="3=8× · 4=25× · 5=75×" color="#FF4500" />
-            <Row icon="🎋" label="Tre Xanh (Bamboo)" value="3=5× · 4=15× · 5=50×" color="#00C853" />
-            <Row icon="🍜" label="Phở (Noodles)" value="3=3× · 4=10× · 5=30×" color="#FFA726" />
-            <Row icon="🌾" label="Lúa (Rice)" value="3=2× · 4=8× · 5=20×" color="#CDDC39" />
-            <Row icon="🐯" label="Hổ — WILD" value="3=20× · 4=75× · 5=300×" color="#FFD700" />
+          <Section title="🎰 LINE PAYS (× Bet Per Line)">
+            <div className="flex flex-col gap-0.5">
+              <Row icon="🐕" label="Cậu Vàng" value="3=25×  4=100×  5=500×" color="#FFA000" />
+              <Row icon="🦅" label="Phượng" value="3=15×  4=50×  5=200×" color="#FF8C00" />
+              <Row icon="🪷" label="Hoa Sen" value="3=10×  4=35×  5=100×" color="#FF85A1" />
+              <Row icon="🏮" label="Đèn Lồng" value="3=8×  4=25×  5=75×" color="#FF6B00" />
+              <Row icon="🎋" label="Tre Xanh" value="3=5×  4=15×  5=50×" color="#4CAF50" />
+              <Row icon="🍜" label="Phở" value="3=3×  4=10×  5=30×" color="#FFD700" />
+              <Row icon="🌾" label="Lúa" value="3=2×  4=8×  5=20×" color="#8BC34A" />
+              <Row icon="🐯" label="Hổ  WILD" value="3=10×  4=35×  5=120×" color="#FFD700" />
+            </div>
           </Section>
 
           {/* Special symbols */}
           <Section title="⭐ SPECIAL SYMBOLS">
             <div className="flex flex-col gap-2 text-[12px]">
               <div className="flex gap-2">
-                <span>🥁</span>
+                <span className="text-lg">🥁</span>
                 <span>
-                  <span style={{ color: '#CD7F32' }} className="font-bold">Trống Đồng — FREE GAMES trigger</span><br />
-                  <span className="text-gray-400">Land on all 3 middle reels → randomly awards <span className="text-yellow-300">8, 12 or 15</span> free spins with a <span className="text-emerald-400">2×, 3× or 5×</span> win multiplier. All free-spin wins are multiplied. No line pay.</span>
+                  <span style={{ color: '#CD7F32' }} className="font-bold">Trống Đồng — SCATTER</span><br />
+                  <span className="text-gray-400">Appears on <span className="text-white">reels 2, 3 & 4 only</span>. Land on all 3 middle reels in one spin → triggers <span className="text-yellow-300 font-bold">Free Games</span>. No line pay.</span>
                 </span>
               </div>
               <div className="flex gap-2">
-                <span>🐃</span>
+                <span className="text-lg">🐃</span>
                 <span>
-                  <span style={{ color: '#8B5E3C' }} className="font-bold">Trâu — Buffalo</span><br />
-                  <span className="text-gray-400">Up to 3 per column visible. 6+ total on the grid triggers <span className="text-yellow-300">BUFFALO RUSH</span>. Does not pay a line win.</span>
+                  <span style={{ color: '#8B5E3C' }} className="font-bold">Trâu — BUFFALO</span><br />
+                  <span className="text-gray-400">Can appear anywhere (up to 3 per column). <span className="text-yellow-300 font-bold">6 or more</span> anywhere on the grid triggers <span className="text-yellow-300 font-bold">BUFFALO RUSH</span>. Does not pay on lines.</span>
                 </span>
               </div>
               <div className="flex gap-2">
-                <span>💎</span>
+                <span className="text-lg">💎</span>
                 <span>
-                  <span style={{ color: '#00BFFF' }} className="font-bold">Trâu Kim Cương — Diamond Buffalo</span><br />
-                  <span className="text-gray-400">Max 1 per spin. Counts as a Buffalo toward the 6-trigger threshold. Higher value inside Buffalo Rush.</span>
+                  <span style={{ color: '#00BFFF' }} className="font-bold">Trâu Kim Cương — DIAMOND BUFFALO</span><br />
+                  <span className="text-gray-400">Maximum <span className="text-white">1 per spin</span>. Counts toward the 6-buffalo trigger. Very rare — triggers the <span className="text-cyan-400 font-bold">Tiến Lên Feature</span> with 5 extra prize lines inside Buffalo Rush.</span>
                 </span>
               </div>
             </div>
@@ -305,48 +333,75 @@ function GameRulesModal({ onClose }: { onClose: () => void }) {
           {/* Free Games */}
           <Section title="🥁 FREE GAMES">
             <div className="text-[12px] text-gray-300 flex flex-col gap-1">
-              <div>• Triggered by 🥁 Scatter on all 3 middle reels.</div>
-              <div>• <span className="text-yellow-300 font-bold">8 spins</span> (most common) · <span className="text-yellow-300 font-bold">12 spins</span> · <span className="text-yellow-300 font-bold">15 spins</span> (rare).</div>
-              <div>• Multiplier: <span className="text-emerald-400 font-bold">2×</span> (most common) · <span className="text-emerald-400 font-bold">3×</span> · <span className="text-emerald-400 font-bold">5×</span> (rare).</div>
-              <div>• <span className="text-white">All wins during free spins are multiplied</span> by the awarded multiplier.</div>
-              <div>• Buffalo Rush can still trigger during Free Games.</div>
+              <div>• Triggered when <span className="text-yellow-300 font-bold">🥁 Scatter appears on all 3 middle reels</span> (reels 2, 3 & 4) simultaneously.</div>
+              <div>• Awards <span className="text-yellow-300 font-bold">6 Free Games</span> — bet is not deducted during free spins.</div>
+              <div>• All wins during Free Games are multiplied by <span className="text-emerald-400 font-bold">2×</span>.</div>
+              <div>• Buffalo Rush can still trigger inside Free Games.</div>
+              <div>• Free Games counter shown at the <span className="text-white">bottom of the reels</span> during the feature.</div>
             </div>
           </Section>
 
           {/* Buffalo Rush */}
-          <Section title="🐃 BUFFALO RUSH (Hold & Collect)">
+          <Section title="🐃 BUFFALO RUSH">
             <div className="text-[12px] text-gray-300 flex flex-col gap-1">
-              <div>• Triggered by 6+ Buffalo (🐃 or 💎) anywhere on the 5×3 grid.</div>
-              <div>• Starting buffalo lock in place. 3 re-spins begin.</div>
-              <div>• Each new Buffalo that lands <span className="text-yellow-400">resets re-spins to 3</span> and fills a prize slot.</div>
-              <div>• Fill all 15 slots → <span className="text-red-400 font-bold">GRAND JACKPOT!</span></div>
+              <div>• Triggered when <span className="text-yellow-400 font-bold">6 or more</span> Buffalo (🐃 or 💎) land anywhere on the grid in one spin.</div>
+              <div>• Enters a <span className="text-yellow-300 font-bold">hold & re-spin</span> mode — <span className="text-white font-bold">8–12 buffalo slots</span> are pre-seeded with prizes on entry.</div>
+              <div>• You get <span className="text-white font-bold">3 re-spins</span>. Each new Buffalo that lands <span className="text-yellow-400">resets the counter to 3</span> and locks in a prize.</div>
+              <div>• Each locked slot awards a random prize: <span className="text-yellow-300 font-bold">1–20× bet in credits</span>, MINI, MAJOR, MINOR or MEGA jackpot.</div>
+              <div>• <span className="text-emerald-400 font-bold">Fill all 15 slots</span> → <span className="text-red-400 font-bold">🏆 GRAND JACKPOT</span> awarded on top of all prizes!</div>
+              <div>• 💎 Diamond Buffalo (rare) unlocks the <span className="text-cyan-400 font-bold">Tiến Lên Feature</span> with 5 extra prize lines.</div>
+            </div>
+          </Section>
+
+          {/* Tiến Lên Feature */}
+          <Section title="💎 TIẾN LÊN FEATURE">
+            <div className="text-[12px] text-gray-300 flex flex-col gap-1">
+              <div>• Triggered by landing a <span className="text-cyan-400 font-bold">Diamond Buffalo 💎</span> during Buffalo Rush (rare drop).</div>
+              <div>• Reveals <span className="text-white font-bold">5 prize columns</span> with their own jackpot prize table.</div>
+              <div>• Each column can award credits or a jackpot tier — collected on top of your Buffalo Rush total.</div>
             </div>
           </Section>
 
           {/* Jackpots */}
           <Section title="🏆 JACKPOTS">
-            <div className="text-[11px] text-gray-500 mb-1.5">Awarded inside Buffalo Rush based on slot positions filled.</div>
-            <div className="text-[12px] flex flex-col gap-1">
-              <Row label="MINI BONUS" value="fixed prize" color="#00D187" />
-              <Row label="MAJOR BONUS" value="fixed prize" color="#FFD700" />
-              <Row label="MAXI BONUS" value="fixed prize" color="#FF8C00" />
-              <Row label="MEGA BONUS" value="grows with every bet" color="#FF4D6D" />
-              <Row label="GRAND JACKPOT" value="fill all 15 Rush slots" color="#FFD700" />
+            <div className="text-[11px] text-gray-400 mb-1.5">All jackpots appear as Buffalo Rush / Tiến Lên prizes. Values scale with denomination.</div>
+            <div className="text-[12px] flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span style={{ color: '#00D187' }} className="font-black">MINI</span>
+                <span className="text-gray-400 text-[11px]">Fixed amount · resets after each hit</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span style={{ color: '#FFD700' }} className="font-black">MAJOR</span>
+                <span className="text-gray-400 text-[11px]">Progressive · grows with every bet</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span style={{ color: '#FF8C00' }} className="font-black">MINOR</span>
+                <span className="text-gray-400 text-[11px]">Progressive · grows with every bet</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span style={{ color: '#FF4D6D' }} className="font-black">MEGA</span>
+                <span className="text-gray-400 text-[11px]">Large progressive · grows each bet</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span style={{ color: '#FF4D6D' }} className="font-black">🏆 GRAND</span>
+                <span className="text-gray-400 text-[11px]">Fill all 15 Buffalo Rush slots · massive progressive jackpot</span>
+              </div>
             </div>
           </Section>
 
           {/* Gamble */}
-          <Section title="♠️ GAMBLE">
+          <Section title="♠️ GAMBLE FEATURE">
             <div className="text-[12px] text-gray-300 flex flex-col gap-1">
-              <div>• Available after any win — choose GAMBLE or TAKE WIN.</div>
-              <div>• Guess <span className="text-yellow-400 font-bold">Red / Black</span> → correct = <span className="text-green-400 font-bold">2× win</span>, wrong = lose all.</div>
-              <div>• Guess <span className="text-yellow-400 font-bold">exact suit</span> → correct = <span className="text-green-400 font-bold">4× win</span>, wrong = lose all.</div>
-              <div>• Max 5 consecutive gambles per win.</div>
+              <div>• Appears after <span className="text-yellow-400 font-bold">any win</span>. Choose <span className="text-purple-400 font-bold">GAMBLE</span> to risk it, or <span className="text-green-400 font-bold">TAKE WIN</span> to keep it.</div>
+              <div>• <span className="text-white">Red / Black</span> guess → correct = <span className="text-green-400 font-bold">2× your win</span>, wrong = <span className="text-red-400">lose all</span>.</div>
+              <div>• <span className="text-white">Exact suit</span> (♠ ♥ ♦ ♣) → correct = <span className="text-green-400 font-bold">4× your win</span>, wrong = <span className="text-red-400">lose all</span>.</div>
+              <div>• Maximum <span className="text-white font-bold">5 gambles in a row</span> per win — then auto-collected.</div>
             </div>
           </Section>
 
-          <div className="text-center text-[10px] text-gray-600 mt-1">
-            Up to 50 paylines · Left-to-right · Wild substitutes all regular symbols
+          <div className="rounded-xl px-4 py-2.5 text-[11px] text-gray-400 leading-5"
+            style={{ background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.12)' }}>
+            <span className="text-yellow-400 font-bold">TIP:</span> Press <span className="text-white font-bold">SPACEBAR</span> to spin. Scatter only appears on reels 2–4. Buffalo Rush starts with 8–12 pre-seeded prizes — fill all 15 for the 🏆 Grand Jackpot ($30,000+). Target RTP: <span className="text-emerald-400 font-bold">70–80%</span>.
           </div>
         </div>
       </motion.div>
@@ -358,7 +413,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="flex flex-col gap-2">
       <div className="text-[11px] font-black tracking-widest uppercase"
-        style={{ color: 'rgba(255,215,0,0.7)', borderBottom: '1px solid rgba(255,215,0,0.15)', paddingBottom: 4 }}>
+        style={{ color: 'rgba(0,192,122,0.8)', borderBottom: '1px solid rgba(0,192,122,0.15)', paddingBottom: 4 }}>
         {title}
       </div>
       {children}
@@ -373,7 +428,7 @@ function Row({ icon, label, value, color }: { icon?: string; label: string; valu
         {icon && <span>{icon}</span>}
         <span style={{ color }}>{label}</span>
       </span>
-      <span className="font-black" style={{ color }}>{value}</span>
+      <span className="font-black tabular-nums" style={{ color }}>{value}</span>
     </div>
   );
 }

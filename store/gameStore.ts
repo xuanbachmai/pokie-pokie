@@ -29,6 +29,8 @@ interface GameState {
   spinningReels:  boolean[];
   buffaloNoteDisplay: { col: number; label: string; key: number } | null;
   highlightedWinLineIdx: number | null;
+  anticipationCols: number[];
+  reelStopDelays: number[];
 
   lastWinLines:      WinLine[];
   lastScatterResult: ScatterResult | null;
@@ -39,6 +41,7 @@ interface GameState {
   activeBonusType:    BonusGameType | null;
   bonusTriggerBet:    number;
   freeSpinsRemaining: number;
+  freeSpinsTotal:     number;   // total spins awarded (for X/6 display)
   freeSpinsMultiplier: number;
   isFreeSpinActive:   boolean;
 
@@ -50,6 +53,13 @@ interface GameState {
 
   nuggetCount:    number;
   nuggetHoldSeeds: boolean[];
+
+  bigWinTier: 'WIN' | 'GREAT' | 'BIG' | 'MEGA' | null;
+  reelJustStopped: number | null;
+
+  // ── Diamond Rush state ────────────────────────────────────────────────────
+  diamondRushSpins:  number;   // spins awarded for this Diamond Rush session
+  diamondRushPrize:  number;   // Buffalo Rush prize to credit when DR ends
 
   // ── Actions ───────────────────────────────────────────────────────────────
   selectDenomination: (denom: number) => void;
@@ -72,6 +82,12 @@ interface GameState {
   stopAutoSpin:         () => void;
   decrementAutoSpin:    () => void;
   setHighlightedWinLine:(idx: number | null) => void;
+  setAnticipation:(cols: number[], delays: number[]) => void;
+  clearBigWin: () => void;
+  triggerDiamondRush: (spins: number, buffaloPrize: number) => void;
+  endDiamondRush:     (drPrize: number) => void;
+  /** Dev cheat — instantly enters Buffalo Rush with a Diamond Buffalo seeded */
+  forceBuffaloRush:   () => void;
 }
 
 const INITIAL_GRID: SymbolId[][] = Array.from({ length: 5 }, () =>
@@ -99,6 +115,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   spinningReels:        [false, false, false, false, false],
   buffaloNoteDisplay:   null,
   highlightedWinLineIdx: null,
+  anticipationCols: [],
+  reelStopDelays: [800, 1100, 1400, 1700, 2200],
 
   lastWinLines:      [],
   lastScatterResult: null,
@@ -109,6 +127,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   activeBonusType:     null,
   bonusTriggerBet:     0,
   freeSpinsRemaining:  0,
+  freeSpinsTotal:      0,
   freeSpinsMultiplier: 1,
   isFreeSpinActive:    false,
 
@@ -120,6 +139,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   nuggetCount:     0,
   nuggetHoldSeeds: Array(15).fill(false),
+
+  bigWinTier:      null,
+  reelJustStopped: null,
+
+  diamondRushSpins: 0,
+  diamondRushPrize: 0,
 
   // ── Denomination selection ────────────────────────────────────────────────
   selectDenomination: (denom) => {
@@ -133,6 +158,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       activeLines:  lines,
       denomSelected: true,
     });
+    // Rescale jackpot seeds for the new denomination
+    useJackpotStore.getState().setDenom(denom);
   },
 
   setBetMultiple: (mult) => {
@@ -156,10 +183,16 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   // ── Spin ─────────────────────────────────────────────────────────────────
   triggerSpin: () => {
-    const { balance, betPerLine, activeLines, phase, isFreeSpinActive } = get();
+    const { balance, betPerLine, activeLines, phase, isFreeSpinActive, lastWinAmount } = get();
     if (phase !== 'IDLE' && phase !== 'FREE_SPINS') return;
+
+    // Auto-collect any pending win before the next spin
+    const effectiveBalance = lastWinAmount > 0
+      ? parseFloat((balance + lastWinAmount).toFixed(2))
+      : balance;
+
     const totalBet = parseFloat((betPerLine * activeLines).toFixed(2));
-    if (!isFreeSpinActive && balance < totalBet) return;
+    if (!isFreeSpinActive && effectiveBalance < totalBet) return;
 
     const result = spin();
 
@@ -172,10 +205,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastWinAmount:     0,
       freeSpinsTotalWin: isFreeSpinActive ? get().freeSpinsTotalWin : 0,
       balance: isFreeSpinActive
-        ? balance
-        : parseFloat((balance - totalBet).toFixed(2)),
+        ? effectiveBalance
+        : parseFloat((effectiveBalance - totalBet).toFixed(2)),
       pendingGrid:   result.visibleGrid,
       stopPositions: result.stopPositions,
+      anticipationCols: [],
+      reelStopDelays: [800, 1100, 1400, 1700, 2200],
     });
   },
 
@@ -193,7 +228,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     try {
       const totalBet    = parseFloat((betPerLine * activeLines).toFixed(2));
       const result      = { visibleGrid: pendingGrid, stopPositions };
-      const winLines    = evaluatePaylines(result.visibleGrid, betPerLine);
+      const winLines    = evaluatePaylines(result.visibleGrid, betPerLine, activeLines);
       const scatterResult = evaluateScatters(result.visibleGrid, totalBet);
 
       const jackpotStore = useJackpotStore.getState();
@@ -203,6 +238,14 @@ export const useGameStore = create<GameState>((set, get) => ({
       let totalWin = winLines.reduce((s, w) => s + w.payout, 0) + scatterResult.payout;
       if (isFreeSpinActive) totalWin *= freeSpinsMultiplier;
       if (jackpotTier) totalWin += jackpotStore.values[jackpotTier];
+
+      // Big win tier for celebration banner
+      const winRatio = totalBet > 0 ? totalWin / totalBet : 0;
+      const bigWinTier =
+        winRatio >= 50 ? 'MEGA' :
+        winRatio >= 20 ? 'BIG'  :
+        winRatio >= 10 ? 'GREAT':
+        winRatio >= 5  ? 'WIN'  : null;
 
       const nuggetResult          = evaluateNuggets(result.visibleGrid);
       const newFreeSpinsRemaining = isFreeSpinActive ? freeSpinsRemaining - 1 : freeSpinsRemaining;
@@ -222,9 +265,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       // ── Priority: Buffalo Rush > Scatter Free Spins > Free Spin continue > Normal ──
 
       if (nuggetResult.triggerFeature) {
-        // 6+ Buffalo (or Diamond Buffalo) → Buffalo Rush
-        const nugCount = Math.min(nuggetResult.count, 6);
-        const seeds    = Array(15).fill(false).map((_, i) => i < nugCount);
+        // 6+ Buffalo → Buffalo Rush; seed count: 40%=8, 30%=9, 20%=10, 7%=11, 3%=12
+        const rng       = Math.random();
+        const seedCount = rng < 0.40 ? 8 : rng < 0.70 ? 9 : rng < 0.90 ? 10 : rng < 0.97 ? 11 : 12;
+        const seeds     = Array(15).fill(false).map((_, i) => i < seedCount);
         set({ phase: 'BONUS_ACTIVE', activeBonusType: 'NUGGET_HOLD', nuggetHoldSeeds: seeds });
 
       } else if (scatterResult.triggerBonus && !isFreeSpinActive) {
@@ -235,6 +279,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           phase:               'BONUS_TRIGGER',
           bonusTriggerBet:     totalBet,
           freeSpinsRemaining:  freeConfig.spinsAwarded,
+          freeSpinsTotal:      freeConfig.spinsAwarded,
           freeSpinsMultiplier: freeConfig.multiplier,
         });
 
@@ -256,11 +301,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
 
       } else {
-        // Normal spin — credit win
+        // Normal spin — hold win as pending; credit only when user clicks Take Win
         set({
-          balance:      parseFloat((get().balance + totalWin).toFixed(2)),
           lastWinAmount: parseFloat(totalWin.toFixed(2)),
-          phase:        'IDLE',
+          phase:         'IDLE',
+          bigWinTier:    bigWinTier as 'WIN' | 'GREAT' | 'BIG' | 'MEGA' | null,
         });
       }
     } catch {
@@ -269,19 +314,24 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   openGamble: () => {
-    const { lastWinAmount, balance } = get();
+    const { lastWinAmount } = get();
     if (lastWinAmount <= 0) return;
+    // Win was never added to balance — just move it into gamble
     set({
-      phase:        'GAMBLE_ACTIVE',
-      gambleAmount: lastWinAmount,
-      balance:      parseFloat((balance - lastWinAmount).toFixed(2)),
+      phase:         'GAMBLE_ACTIVE',
+      gambleAmount:  lastWinAmount,
       lastWinAmount: 0,
     });
   },
 
   takeWin: () => {
-    // Win is already in balance — just dismiss the offer
-    set({ lastWinAmount: 0, totalWinThisSpin: 0 });
+    // Credit the pending win into balance now
+    const { lastWinAmount, balance } = get();
+    set({
+      balance:          parseFloat((balance + lastWinAmount).toFixed(2)),
+      lastWinAmount:    0,
+      totalWinThisSpin: 0,
+    });
   },
 
   resolveGamble: (outcome) => {
@@ -325,16 +375,73 @@ export const useGameStore = create<GameState>((set, get) => ({
         freeSpinsTotalWin:   0,
       });
     } else if (prize.type === 'NUGGET_HOLD') {
+      // Do NOT add to balance yet — keep as pending win so Gamble/Take Win works correctly
       set({
-        balance:         parseFloat((balance + prize.totalAmount).toFixed(2)),
-        activeBonusType: null,
-        phase:           'IDLE',
-        lastWinAmount:   prize.totalAmount,
+        activeBonusType:   null,
+        phase:             'IDLE',
+        lastWinAmount:     parseFloat(prize.totalAmount.toFixed(2)),
+        totalWinThisSpin:  parseFloat(prize.totalAmount.toFixed(2)),
       });
     }
   },
 
   setHighlightedWinLine: (idx) => set({ highlightedWinLineIdx: idx }),
+  setAnticipation: (cols, delays) => set({ anticipationCols: cols, reelStopDelays: delays }),
+  clearBigWin: () => set({ bigWinTier: null }),
+
+  triggerDiamondRush: (spins, buffaloPrize) => set({
+    phase:            'DIAMOND_RUSH',
+    activeBonusType:  null,
+    diamondRushSpins: spins,
+    diamondRushPrize: buffaloPrize,
+  }),
+
+  endDiamondRush: (drPrize) => {
+    const { diamondRushPrize } = get();
+    const total = parseFloat((diamondRushPrize + drPrize).toFixed(2));
+    // Keep as pending win — Gamble/Take Win handles crediting to balance
+    set({
+      phase:            'IDLE',
+      lastWinAmount:    total,
+      totalWinThisSpin: total,
+      activeBonusType:  null,
+      diamondRushSpins: 0,
+      diamondRushPrize: 0,
+    });
+  },
+
+  forceBuffaloRush: () => {
+    // Grid: 8 buffalo total — 1 SPECIAL (diamond) + 7 NUGGET, spread across all 5 reels
+    const forcedGrid: SymbolId[][] = [
+      [SymbolId.NUGGET,  SymbolId.DRAGON,  SymbolId.NUGGET ],  // col 0
+      [SymbolId.SPECIAL, SymbolId.NUGGET,  SymbolId.LOTUS  ],  // col 1 — DIAMOND BUFFALO
+      [SymbolId.NUGGET,  SymbolId.TIGER,   SymbolId.NUGGET ],  // col 2
+      [SymbolId.DRAGON,  SymbolId.NUGGET,  SymbolId.JADE   ],  // col 3
+      [SymbolId.NUGGET,  SymbolId.COIN,    SymbolId.TIGER  ],  // col 4
+    ];
+    // nuggetHoldSeeds: 15 booleans, index = row*5 + col
+    // Seeds match the NUGGET/SPECIAL positions in forcedGrid:
+    // col0-row0 ✓, col1-row0 ✓(diamond), col2-row0 ✓, col4-row0 ✓
+    // col1-row1 ✓, col3-row1 ✓
+    // col0-row2 ✓, col2-row2 ✓
+    const seeds = [
+      true,  true,  true,  false, true,   // row 0: col 0,1(SPECIAL),2,4
+      false, true,  false, true,  false,  // row 1: col 1,3
+      true,  false, true,  false, false,  // row 2: col 0,2
+    ];
+    set({
+      phase:          'BONUS_ACTIVE',
+      activeBonusType: 'NUGGET_HOLD',
+      visibleGrid:    forcedGrid,
+      pendingGrid:    null,
+      nuggetCount:    8,
+      nuggetHoldSeeds: seeds,
+      spinningReels:  [false, false, false, false, false],
+      lastWinLines:   [],
+      lastWinAmount:  0,
+      totalWinThisSpin: 0,
+    });
+  },
 
   startAutoSpin:     (count) => set({ autoSpinActive: true,  autoSpinCount: count }),
   stopAutoSpin:      ()      => set({ autoSpinActive: false, autoSpinCount: 0 }),

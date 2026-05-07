@@ -2,10 +2,10 @@ import { GameSymbol, JackpotConfig, JackpotTier, Payline, SymbolId } from '@/typ
 
 export const SYMBOLS: Record<SymbolId, GameSymbol> = {
   [SymbolId.DRAGON]: {
-    id: SymbolId.DRAGON, label: 'Rồng', emoji: '🐉',
+    id: SymbolId.DRAGON, label: 'Cậu Vàng', emoji: '🐕',
     weight: 1, isWild: false, isScatter: false,
     payouts: { 3: 25, 4: 100, 5: 500 },
-    color: '#FF4D6D',
+    color: '#FFA000',
   },
   [SymbolId.TIGER]: {
     id: SymbolId.TIGER, label: 'Phượng', emoji: '🦅',
@@ -45,26 +45,26 @@ export const SYMBOLS: Record<SymbolId, GameSymbol> = {
   },
   [SymbolId.WILD]: {
     id: SymbolId.WILD, label: 'Hổ WILD', emoji: '🐯',
-    weight: 2, isWild: true, isScatter: false,
-    payouts: { 3: 20, 4: 75, 5: 300 },
+    weight: 5, isWild: true, isScatter: false,
+    payouts: { 3: 10, 4: 35, 5: 120 },   // lower pure-wild line pay; substitution drives real value
     color: '#FF8C00',
   },
   [SymbolId.SCATTER]: {
     id: SymbolId.SCATTER, label: 'Trống Đồng', emoji: '🥁',
-    weight: 1, isWild: false, isScatter: true,
+    weight: 3, isWild: false, isScatter: true,   // ↑ raised: more frequent free games triggers
     payouts: { 3: 5, 4: 20, 5: 100 },
     color: '#CD7F32',
   },
   [SymbolId.NUGGET]: {
     id: SymbolId.NUGGET, label: 'Trâu', emoji: '🐃',
-    weight: 3, isWild: false, isScatter: false,
-    payouts: { 3: 5, 4: 15, 5: 50 },
+    weight: 4, isWild: false, isScatter: false,   // feature-only: breaks paylines, triggers Buffalo Rush at 6+
+    payouts: {},   // no payline prizes — Buffalo Rush pays separately
     color: '#8B5E3C',
   },
   [SymbolId.SPECIAL]: {
     id: SymbolId.SPECIAL, label: 'Trâu Kim Cương', emoji: '💎',
-    weight: 1, isWild: false, isScatter: true,
-    payouts: { 3: 5, 4: 20, 5: 100 },
+    weight: 1, isWild: false, isScatter: true,   // feature-only: breaks paylines, counts as 2 buffalo in Rush
+    payouts: {},   // no payline prizes — Buffalo Rush pays separately
     color: '#00BFFF',
   },
 };
@@ -149,27 +149,29 @@ export const PAYLINES: Payline[] = [
   [1, 2, 0, 0, 1],  // 50 diamond bottom
 ];
 
+// Base seed amounts are defined at 1¢ denomination (REF_DENOM = 0.01).
+// jackpotStore.scaledSeed() multiplies by (currentDenom / 0.01) at runtime.
 export const JACKPOT_CONFIGS: Record<JackpotTier, JackpotConfig> = {
   [JackpotTier.MINI]: {
-    tier: JackpotTier.MINI, label: 'MINI BONUS',
-    seedAmount: 50, contributionRate: 0.001,
+    tier: JackpotTier.MINI, label: 'MINI JACKPOT',
+    seedAmount: 10, contributionRate: 0,    // base $10 @ 1¢ — never grows
     triggerSymbol: SymbolId.JADE,
     color: '#00D187', bgColor: 'rgba(0,168,107,0.2)',
   },
   [JackpotTier.MINOR]: {
-    tier: JackpotTier.MINOR, label: 'MAJOR BONUS',
-    seedAmount: 250, contributionRate: 0.002,
+    tier: JackpotTier.MINOR, label: 'MAJOR JACKPOT',
+    seedAmount: 30, contributionRate: 0.002,  // base $30 @ 1¢
     triggerSymbol: SymbolId.COIN,
     color: '#FFD700', bgColor: 'rgba(255,215,0,0.2)',
   },
   [JackpotTier.MAJOR]: {
-    tier: JackpotTier.MAJOR, label: 'MAXI BONUS',
-    seedAmount: 2500, contributionRate: 0.003,
+    tier: JackpotTier.MAJOR, label: 'MINOR JACKPOT',   // renamed from MAXI
+    seedAmount: 50, contributionRate: 0.003,           // base $50 @ 1¢
     triggerSymbol: SymbolId.TIGER,
     color: '#FF8C00', bgColor: 'rgba(255,140,0,0.2)',
   },
   [JackpotTier.GRAND]: {
-    tier: JackpotTier.GRAND, label: 'MEGA BONUS',
+    tier: JackpotTier.GRAND, label: 'MEGA JACKPOT',
     seedAmount: 5000, contributionRate: 0.01,   // progressive — grows 1% per total bet
     triggerSymbol: SymbolId.DRAGON,
     color: '#FF4D6D', bgColor: 'rgba(220,20,60,0.2)',

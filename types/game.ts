@@ -98,6 +98,7 @@ export type GamePhase =
   | 'WIN_DISPLAY'
   | 'BONUS_TRIGGER'
   | 'BONUS_ACTIVE'
+  | 'DIAMOND_RUSH'
   | 'GAMBLE_OFFER'
   | 'GAMBLE_ACTIVE'
   | 'FREE_SPINS';

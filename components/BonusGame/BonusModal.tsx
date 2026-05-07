@@ -11,14 +11,47 @@ export function BonusModal() {
   const freeSpinsRemaining  = useGameStore(s => s.freeSpinsRemaining);
   const freeSpinsMultiplier = useGameStore(s => s.freeSpinsMultiplier);
 
-  const showTrigger = phase === 'BONUS_TRIGGER';
-  const showActive  = phase === 'BONUS_ACTIVE' && activeBonusType !== null;
-  const visible     = showTrigger || showActive;
+  const showTrigger  = phase === 'BONUS_TRIGGER';
+  const showActive   = phase === 'BONUS_ACTIVE' && activeBonusType !== null;
+  const isNuggetHold = showActive && activeBonusType === 'NUGGET_HOLD';
 
   return (
     <AnimatePresence>
-      {visible && (
+      {/* ── BUFFALO RUSH — large card, centred, capped so it doesn't fill desktop ── */}
+      {isNuggetHold && (
         <motion.div
+          key="nugget-hold"
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(6px)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+        >
+          <motion.div
+            className="relative flex flex-col overflow-hidden"
+            style={{
+              width: 'min(520px, 96vw)',
+              maxHeight: '94vh',
+              background: 'linear-gradient(160deg, #020f06, #071a0a)',
+              border: '2px solid rgba(0,192,122,0.4)',
+              boxShadow: '0 0 60px rgba(0,192,122,0.18)',
+              borderRadius: 24,
+            }}
+            initial={{ scale: 0.85, y: 30 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.85, y: 30 }}
+            transition={{ type: 'spring', stiffness: 240, damping: 22 }}
+          >
+            <NuggetHoldFeature onClose={() => {}} />
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* ── All other bonus modals (card style) ── */}
+      {(showTrigger || (showActive && !isNuggetHold)) && (
+        <motion.div
+          key="bonus-card"
           className="fixed inset-0 flex items-center justify-center z-50"
           style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)' }}
           initial={{ opacity: 0 }}
@@ -28,9 +61,9 @@ export function BonusModal() {
           <motion.div
             className="relative max-w-sm w-full mx-4 rounded-2xl overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, #0D0D0D, #1A0A0A)',
-              border: '2px solid rgba(255,215,0,0.4)',
-              boxShadow: '0 0 40px rgba(255,215,0,0.2)',
+              background: 'linear-gradient(135deg, #020f06, #071a0a)',
+              border: '2px solid rgba(0,192,122,0.4)',
+              boxShadow: '0 0 40px rgba(0,192,122,0.18)',
             }}
             initial={{ scale: 0.8, y: 40 }}
             animate={{ scale: 1, y: 0 }}
@@ -54,7 +87,6 @@ export function BonusModal() {
                   Trống Đồng on all 3 middle reels
                 </div>
 
-                {/* Spin count × multiplier display */}
                 <div className="flex gap-6 text-center">
                   <div>
                     <div className="text-5xl font-black text-yellow-400">{freeSpinsRemaining}</div>
@@ -83,19 +115,14 @@ export function BonusModal() {
                       '0 0 10px rgba(255,215,0,0.4)',
                     ],
                   }}
-                  transition={{ duration: 1, repeat: Infinity }}
+                  transition={{ type: 'tween', duration: 1, repeat: Infinity }}
                 >
                   PLAY FREE GAMES!
                 </motion.button>
               </div>
             )}
 
-            {/* ── Buffalo Rush ── */}
-            {showActive && activeBonusType === 'NUGGET_HOLD' && (
-              <NuggetHoldFeature onClose={() => {}} />
-            )}
-
-            {/* ── Free Spins banner (shown briefly when FREE_SPINS phase starts) ── */}
+            {/* ── Free Spins banner ── */}
             {showActive && activeBonusType === 'FREE_SPINS' && (
               <FreeSpinsBanner onClose={() => {}} />
             )}

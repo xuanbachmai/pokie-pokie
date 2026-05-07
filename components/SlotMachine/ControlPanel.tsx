@@ -1,30 +1,67 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useSpinSequence } from '@/hooks/useSpinSequence';
 import { getDenomConfig } from '@/lib/constants';
 import { formatCredits } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { getAudio } from '@/lib/audioEngine';
+
+/* ── Animated win counter ────────────────────────────────────────────────── */
+function AnimatedWin({ target }: { target: number }) {
+  const [displayed, setDisplayed] = useState(target);
+  const rafRef   = useRef<number | null>(null);
+  const startRef = useRef<number>(0);
+  const fromRef  = useRef<number>(0);
+  const toRef    = useRef<number>(target);
+
+  useEffect(() => {
+    if (target === toRef.current && displayed === target) return;
+    toRef.current  = target;
+    fromRef.current = displayed;
+
+    if (target <= 0) { setDisplayed(0); return; }
+
+    startRef.current = performance.now();
+    const duration   = Math.min(2200, Math.max(700, target * 40));
+
+    function tick(now: number) {
+      const elapsed  = now - startRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased    = 1 - Math.pow(1 - progress, 3);
+      const val      = fromRef.current + (toRef.current - fromRef.current) * eased;
+      setDisplayed(parseFloat(val.toFixed(2)));
+      if (progress < 1) rafRef.current = requestAnimationFrame(tick);
+    }
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target]);
+
+  return <>{formatCredits(displayed)}</>;
+}
 
 /* ── Reusable info tile ─────────────────────────────────────────────────── */
-function InfoBox({ label, value, highlight, sub }: {
-  label: string; value: string; highlight?: boolean; sub?: string;
+function InfoBox({ label, value, highlight, sub, animateWin }: {
+  label: string; value: string; highlight?: boolean; sub?: string; animateWin?: number;
 }) {
   return (
     <div
       className="flex-1 flex flex-col items-center justify-center py-3 px-2 rounded-xl"
-      style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,215,0,0.15)' }}
+      style={{ background: 'rgba(0,14,6,0.60)', border: '1px solid rgba(0,192,122,0.14)' }}
     >
       <span className="text-[10px] uppercase tracking-widest text-gray-500">{label}</span>
       <motion.span
-        key={value}
+        key={animateWin !== undefined ? animateWin : value}
         className="text-lg font-black mt-0.5 tabular-nums"
         style={{ color: highlight ? '#FFD700' : '#fff' }}
         initial={highlight ? { scale: 1.25 } : {}}
         animate={{ scale: 1 }}
         transition={{ duration: 0.2 }}
       >
-        {value}
+        {animateWin !== undefined ? <AnimatedWin target={animateWin} /> : value}
       </motion.span>
       {sub && <span className="text-[9px] text-gray-600 mt-0.5">{sub}</span>}
     </div>
@@ -68,7 +105,7 @@ function Stepper({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[10px] uppercase tracking-widest text-center" style={{ color: 'rgba(255,215,0,0.5)' }}>
+      <span className="text-[10px] uppercase tracking-widest text-center" style={{ color: 'rgba(0,192,122,0.6)' }}>
         {label}
       </span>
       <div className="flex items-center gap-2">
@@ -143,6 +180,7 @@ export function ControlPanel({ onChangeDenom }: { onChangeDenom?: () => void }) 
   const activeLines        = useGameStore(s => s.activeLines);
   const phase              = useGameStore(s => s.phase);
   const freeSpinsRemaining = useGameStore(s => s.freeSpinsRemaining);
+  const freeSpinsTotal     = useGameStore(s => s.freeSpinsTotal);
   const isFreeSpinActive   = useGameStore(s => s.isFreeSpinActive);
   const totalWinThisSpin   = useGameStore(s => s.totalWinThisSpin);
   const lastWinAmount      = useGameStore(s => s.lastWinAmount);
@@ -150,90 +188,141 @@ export function ControlPanel({ onChangeDenom }: { onChangeDenom?: () => void }) 
   const setLines           = useGameStore(s => s.setLines);
   const openGamble         = useGameStore(s => s.openGamble);
   const takeWin            = useGameStore(s => s.takeWin);
+  const forceBuffaloRush   = useGameStore(s => s.forceBuffaloRush);
   const { startSpin }      = useSpinSequence();
 
   const cfg      = getDenomConfig(denomination);
   const totalBet = parseFloat((betPerLine * activeLines).toFixed(2));
-  const canSpin  = phase === 'IDLE' || phase === 'FREE_SPINS';
+  const canSpin     = phase === 'IDLE' || phase === 'FREE_SPINS';
   const showTakeWin = phase === 'IDLE' && lastWinAmount > 0;
+  // WIN box shows lastWinAmount when idle (keeps value visible for gamble decision)
+  const winDisplay  = (phase === 'IDLE' && lastWinAmount > 0) ? lastWinAmount : totalWinThisSpin;
 
   return (
     <div className="flex flex-col gap-4 w-full">
 
       {/* ── Credit / Bet / Win ── */}
       <div className="flex gap-2">
-        <InfoBox label="Credit"  value={formatCredits(balance)} />
+        <InfoBox label="Credit"    value={formatCredits(balance)} />
         <InfoBox label="Total Bet" value={formatCredits(totalBet)} highlight />
         <InfoBox
           label="Win"
-          value={totalWinThisSpin > 0 ? formatCredits(totalWinThisSpin) : '$0.00'}
-          highlight={totalWinThisSpin > 0}
+          value={winDisplay > 0 ? formatCredits(winDisplay) : '$0.00'}
+          highlight={winDisplay > 0}
+          animateWin={winDisplay}
         />
       </div>
 
-      {/* ── Gamble / Take Win row ── */}
-      <AnimatePresence>
-        {showTakeWin && (
-          <motion.div
-            className="flex gap-2"
-            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            {/* GAMBLE button */}
-            <motion.button
-              onClick={openGamble}
-              className="flex-1 py-3 rounded-xl font-black text-sm tracking-widest flex flex-col items-center gap-0.5"
-              style={{
-                background: 'linear-gradient(135deg, #3a0060, #6a00aa)',
-                border: '1px solid rgba(180,80,255,0.5)',
-                color: '#e080ff',
-              }}
-              whileTap={{ scale: 0.94 }}
-              animate={{
-                boxShadow: [
-                  '0 0 8px rgba(160,60,255,0.3)',
-                  '0 0 20px rgba(160,60,255,0.7)',
-                  '0 0 8px rgba(160,60,255,0.3)',
-                ],
-              }}
-              transition={{ duration: 1.2, repeat: Infinity }}
-            >
-              <span className="text-lg leading-none">♠️</span>
-              <span>GAMBLE</span>
-              <span className="text-[10px] font-bold opacity-70">{formatCredits(lastWinAmount)}</span>
-            </motion.button>
+      {/* ── SPIN row: [GAMBLE] [SPIN] [TAKE WIN] — always visible ── */}
+      <div className="flex items-center justify-between gap-2">
 
-            {/* TAKE WIN button */}
-            <motion.button
-              onClick={takeWin}
-              className="flex-1 py-3 rounded-xl font-black text-sm tracking-widest flex flex-col items-center gap-0.5"
-              style={{
-                background: 'linear-gradient(135deg, #004020, #007840)',
-                border: '1px solid rgba(0,200,100,0.5)',
-                color: '#40ff90',
-              }}
-              whileTap={{ scale: 0.94 }}
-              animate={{
-                boxShadow: [
-                  '0 0 8px rgba(0,200,80,0.3)',
-                  '0 0 20px rgba(0,200,80,0.65)',
-                  '0 0 8px rgba(0,200,80,0.3)',
-                ],
-              }}
-              transition={{ duration: 1.2, repeat: Infinity, delay: 0.6 }}
-            >
-              <span className="text-lg leading-none">✅</span>
-              <span>TAKE WIN</span>
-              <span className="text-[10px] font-bold opacity-70">{formatCredits(lastWinAmount)}</span>
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* GAMBLE — left of SPIN, always shown, active only when there's a win */}
+        <motion.button
+          onClick={showTakeWin ? openGamble : undefined}
+          disabled={!showTakeWin}
+          className="flex flex-col items-center justify-center py-3 rounded-xl font-black text-sm tracking-widest"
+          style={{
+            flex: 1,
+            minHeight: 72,
+            background: showTakeWin
+              ? 'linear-gradient(135deg, #3a0060, #6a00aa)'
+              : 'rgba(60,0,100,0.18)',
+            border: showTakeWin
+              ? '1px solid rgba(180,80,255,0.5)'
+              : '1px solid rgba(180,80,255,0.15)',
+            color: showTakeWin ? '#e080ff' : 'rgba(200,120,255,0.25)',
+            cursor: showTakeWin ? 'pointer' : 'default',
+            transition: 'background 0.3s, border 0.3s, color 0.3s',
+          }}
+          whileTap={showTakeWin ? { scale: 0.94 } : {}}
+          animate={showTakeWin ? {
+            boxShadow: [
+              '0 0 8px rgba(160,60,255,0.3)',
+              '0 0 20px rgba(160,60,255,0.7)',
+              '0 0 8px rgba(160,60,255,0.3)',
+            ],
+          } : { boxShadow: '0 0 0px rgba(0,0,0,0)' }}
+          transition={{ duration: 1.2, repeat: Infinity }}
+        >
+          <span className="text-xl leading-none" style={{ opacity: showTakeWin ? 1 : 0.22 }}>♠️</span>
+          <span className="text-xs mt-0.5">GAMBLE</span>
+          <span className="text-[10px] font-bold mt-0.5" style={{ opacity: showTakeWin ? 0.7 : 0.2 }}>
+            {showTakeWin ? formatCredits(lastWinAmount) : '$0.00'}
+          </span>
+        </motion.button>
+
+        {/* SPIN button — centre */}
+        <motion.button
+          onClick={() => {
+            if (!canSpin) return;
+            if (!isFreeSpinActive && balance < totalBet) {
+              const audio = getAudio();
+              if (audio.ready) audio.playInsufficientFunds();
+              return;
+            }
+            startSpin();
+          }}
+          disabled={!canSpin}
+          className="w-24 h-24 rounded-full font-black text-black disabled:opacity-40 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
+          style={{
+            background: 'linear-gradient(135deg, #FFD700, #FF8C00)',
+            boxShadow: canSpin ? '0 0 28px rgba(255,165,0,0.7), 0 6px 16px rgba(0,0,0,0.5)' : 'none',
+            fontSize: 28,
+            flexShrink: 0,
+          }}
+          whileTap={canSpin ? { scale: 0.9 } : {}}
+          animate={canSpin ? {
+            boxShadow: [
+              '0 0 20px rgba(255,165,0,0.4)',
+              '0 0 42px rgba(255,165,0,0.9)',
+              '0 0 20px rgba(255,165,0,0.4)',
+            ],
+          } : {}}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          <span>{phase === 'SPINNING' ? '⏳' : '🎰'}</span>
+          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.12em' }}>SPIN</span>
+        </motion.button>
+
+        {/* TAKE WIN — right of SPIN, always shown, active only when there's a win */}
+        <motion.button
+          onClick={showTakeWin ? takeWin : undefined}
+          disabled={!showTakeWin}
+          className="flex flex-col items-center justify-center py-3 rounded-xl font-black text-sm tracking-widest"
+          style={{
+            flex: 1,
+            minHeight: 72,
+            background: showTakeWin
+              ? 'linear-gradient(135deg, #004020, #007840)'
+              : 'rgba(0,60,30,0.18)',
+            border: showTakeWin
+              ? '1px solid rgba(0,200,100,0.5)'
+              : '1px solid rgba(0,200,100,0.15)',
+            color: showTakeWin ? '#40ff90' : 'rgba(60,220,130,0.25)',
+            cursor: showTakeWin ? 'pointer' : 'default',
+            transition: 'background 0.3s, border 0.3s, color 0.3s',
+          }}
+          whileTap={showTakeWin ? { scale: 0.94 } : {}}
+          animate={showTakeWin ? {
+            boxShadow: [
+              '0 0 8px rgba(0,200,80,0.3)',
+              '0 0 20px rgba(0,200,80,0.65)',
+              '0 0 8px rgba(0,200,80,0.3)',
+            ],
+          } : { boxShadow: '0 0 0px rgba(0,0,0,0)' }}
+          transition={{ duration: 1.2, repeat: Infinity, delay: 0.6 }}
+        >
+          <span className="text-xl leading-none" style={{ opacity: showTakeWin ? 1 : 0.22 }}>✅</span>
+          <span className="text-xs mt-0.5">TAKE WIN</span>
+          <span className="text-[10px] font-bold mt-0.5" style={{ opacity: showTakeWin ? 0.7 : 0.2 }}>
+            {showTakeWin ? formatCredits(lastWinAmount) : '$0.00'}
+          </span>
+        </motion.button>
+      </div>
 
       {/* ── Row 1: Multiple options ── */}
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] uppercase tracking-widest px-0.5" style={{ color: 'rgba(255,215,0,0.4)' }}>Multiple</span>
+        <span className="text-[10px] uppercase tracking-widest px-0.5" style={{ color: 'rgba(0,192,122,0.55)' }}>Multiple</span>
         <div className="flex gap-1.5">
           {cfg.multiples.map(m => {
             const active = m === betMultiple;
@@ -260,7 +349,7 @@ export function ControlPanel({ onChangeDenom }: { onChangeDenom?: () => void }) 
       {/* ── Row 2: Lines options + denom chip ── */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between px-0.5">
-          <span className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(255,215,0,0.4)' }}>Lines</span>
+          <span className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(0,192,122,0.55)' }}>Lines</span>
           {onChangeDenom && (
             <button
               onClick={onChangeDenom}
@@ -295,40 +384,20 @@ export function ControlPanel({ onChangeDenom }: { onChangeDenom?: () => void }) 
         </div>
       </div>
 
-      {/* ── SPIN row ── */}
-      <div className="flex items-center justify-center">
-        {isFreeSpinActive && (
-          <div className="absolute left-0 text-center">
-            <div className="text-amber-500 font-black text-sm animate-pulse">🥁 FREE GAMES</div>
-            <div className="text-yellow-300 font-black text-2xl">{freeSpinsRemaining}</div>
-            <div className="text-gray-500 text-[10px]">spins left</div>
-          </div>
-        )}
-
-        {/* SPIN button */}
-        <motion.button
-          onClick={startSpin}
-          disabled={!canSpin || (!isFreeSpinActive && balance < totalBet)}
-          className="w-24 h-24 rounded-full font-black text-black disabled:opacity-40 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
+      {/* ── DEV cheat: force Buffalo Rush with Diamond Buffalo ── */}
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          onClick={forceBuffaloRush}
+          className="w-full py-1.5 rounded-lg font-black text-xs tracking-widest transition-all"
           style={{
-            background: 'linear-gradient(135deg, #FFD700, #FF8C00)',
-            boxShadow: canSpin ? '0 0 28px rgba(255,165,0,0.7), 0 6px 16px rgba(0,0,0,0.5)' : 'none',
-            fontSize: 28,
+            background: 'rgba(0,191,255,0.10)',
+            border: '1px dashed rgba(0,191,255,0.35)',
+            color: 'rgba(0,191,255,0.65)',
           }}
-          whileTap={canSpin ? { scale: 0.9 } : {}}
-          animate={canSpin ? {
-            boxShadow: [
-              '0 0 20px rgba(255,165,0,0.4)',
-              '0 0 42px rgba(255,165,0,0.9)',
-              '0 0 20px rgba(255,165,0,0.4)',
-            ],
-          } : {}}
-          transition={{ duration: 1.5, repeat: Infinity }}
         >
-          <span>{phase === 'SPINNING' ? '⏳' : '🎰'}</span>
-          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.12em' }}>SPIN</span>
-        </motion.button>
-      </div>
+          💎 DEV: BUFFALO RUSH
+        </button>
+      )}
     </div>
   );
 }

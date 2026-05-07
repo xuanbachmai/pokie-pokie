@@ -26,5 +26,5 @@ export function contributeToJackpots(
 }
 
 export function resetJackpot(tier: JackpotTier): number {
-  return JACKPOT_CONFIGS[tier].seedAmount;
+  return JACKPOT_CONFIGS[tier].seedAmount;   // base seed; store overrides with scaledSeed
 }

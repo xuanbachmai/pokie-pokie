@@ -30,22 +30,45 @@ export const REEL_STRIPS: SymbolId[][] = [
 /**
  * Enforce buffalo constraints on the visible grid (mutates in place):
  *   - At most 1 Diamond Buffalo (SPECIAL) per spin — extras become NUGGET.
- *   - Regular Buffalo (NUGGET) are unlimited; a single column can show 1, 2 or 3.
+ *   - Total buffalo (NUGGET + SPECIAL) is capped below 6 in 85% of spins
+ *     so the Buffalo Rush feature trigger stays rare while 2-3 per column
+ *     can still appear regularly for visual excitement.
  */
 function enforceBuffaloLimits(grid: SymbolId[][]): void {
-  // Collect all SPECIAL positions
+  // 1. SPECIAL limit — at most 1 per spin, only 25% chance it survives
   const specialPositions: Array<[number, number]> = [];
   for (let col = 0; col < grid.length; col++)
     for (let row = 0; row < grid[col].length; row++)
       if (grid[col][row] === SymbolId.SPECIAL) specialPositions.push([col, row]);
 
-  // Keep one random SPECIAL, downgrade the rest to regular NUGGET
-  if (specialPositions.length > 1) {
-    const keepIdx = Math.floor(Math.random() * specialPositions.length);
+  if (specialPositions.length > 0) {
+    const keepOne = Math.random() < 0.25; // 75% → all become NUGGET
+    const keepIdx = keepOne
+      ? Math.floor(Math.random() * specialPositions.length)
+      : -1;
     for (let i = 0; i < specialPositions.length; i++) {
       if (i === keepIdx) continue;
       const [col, row] = specialPositions[i];
       grid[col][row] = SymbolId.NUGGET;
+    }
+  }
+
+  // 2. Cap total buffalo — if 6+ would appear, 85% chance to reduce to 3-5
+  //    so the feature trigger is genuinely rare but 2-3 per column are common
+  const allBuffaloPos: Array<[number, number]> = [];
+  for (let col = 0; col < grid.length; col++)
+    for (let row = 0; row < grid[col].length; row++)
+      if (grid[col][row] === SymbolId.NUGGET || grid[col][row] === SymbolId.SPECIAL)
+        allBuffaloPos.push([col, row]);
+
+  if (allBuffaloPos.length >= 6 && Math.random() < 0.85) {
+    // Keep 3, 4, or 5 buffalos; convert the rest to low-value symbol
+    const keepCount = 3 + Math.floor(Math.random() * 3);
+    // Shuffle in place to randomise which positions are kept
+    const shuffled = allBuffaloPos.sort(() => Math.random() - 0.5);
+    for (let i = keepCount; i < shuffled.length; i++) {
+      const [col, row] = shuffled[i];
+      grid[col][row] = SymbolId.JADE; // replace with rice (low-value, common)
     }
   }
 }
@@ -62,10 +85,11 @@ export function spin(): SpinResult {
   return { visibleGrid, stopPositions };
 }
 
-export function evaluatePaylines(grid: SymbolId[][], betPerLine: number): WinLine[] {
+export function evaluatePaylines(grid: SymbolId[][], betPerLine: number, activeLines = 50): WinLine[] {
   const wins: WinLine[] = [];
+  const lineCount = Math.min(activeLines, PAYLINES.length);
 
-  for (let p = 0; p < PAYLINES.length; p++) {
+  for (let p = 0; p < lineCount; p++) {
     const line = PAYLINES[p];
     const lineSymbols = line.map((row, col) => grid[col][row]);
 
@@ -78,7 +102,8 @@ export function evaluatePaylines(grid: SymbolId[][], betPerLine: number): WinLin
         count++;
         continue;
       }
-      if (sym === SymbolId.SCATTER) break;
+      // SCATTER, NUGGET, and SPECIAL all break paylines — they are feature-only symbols
+      if (sym === SymbolId.SCATTER || sym === SymbolId.NUGGET || sym === SymbolId.SPECIAL) break;
       if (anchorSymbol === null) {
         anchorSymbol = sym;
         count++;

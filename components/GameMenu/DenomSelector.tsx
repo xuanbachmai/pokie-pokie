@@ -92,7 +92,7 @@ export function DenomSelector({ onComplete }: { onComplete: () => void }) {
   return (
     <motion.div
       className="fixed inset-0 z-[400] flex flex-col items-center justify-center p-6"
-      style={{ background: 'linear-gradient(160deg, #0a0018 0%, #0D0005 50%, #0a001a 100%)' }}
+      style={{ background: 'linear-gradient(160deg, #010e05 0%, #020E06 50%, #011408 100%)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -102,7 +102,7 @@ export function DenomSelector({ onComplete }: { onComplete: () => void }) {
         <div className="absolute top-1/3 left-1/3 w-72 h-72 rounded-full opacity-8"
           style={{ background: 'radial-gradient(circle, #FFD700, transparent)', filter: 'blur(70px)' }} />
         <div className="absolute bottom-1/3 right-1/3 w-56 h-56 rounded-full opacity-8"
-          style={{ background: 'radial-gradient(circle, #CC0000, transparent)', filter: 'blur(60px)' }} />
+          style={{ background: 'radial-gradient(circle, #00C07A, transparent)', filter: 'blur(60px)' }} />
       </div>
 
       <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-6">
@@ -110,29 +110,28 @@ export function DenomSelector({ onComplete }: { onComplete: () => void }) {
         <div className="text-center">
           <motion.h1
             className="text-3xl font-black tracking-widest"
-            style={{ background: 'linear-gradient(90deg, #FFD700, #CC0000, #FFD700)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundSize: '200%' }}
+            style={{ background: 'linear-gradient(90deg, #00C07A, #FFD700, #00C07A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundSize: '200%' }}
             animate={{ backgroundPosition: ['0%', '100%', '0%'] }}
             transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
           >
-            🏮 VIETNAM MAZE
+            🌾 VIETNAM MAZE
           </motion.h1>
-          <p className="text-[10px] text-gray-500 tracking-[0.3em] uppercase mt-1">Mekong Treasures</p>
         </div>
 
         {/* Balance badge */}
         <div
           className="px-5 py-2 rounded-full text-sm font-black"
-          style={{ background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)', color: '#FFD700' }}
+          style={{ background: 'rgba(0,192,122,0.12)', border: '1px solid rgba(0,192,122,0.3)', color: '#00C07A' }}
         >
           Balance: {formatCredits(balance)}
         </div>
 
         {/* Divider */}
-        <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.4), transparent)' }} />
+        <div className="w-full h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(0,192,122,0.4), transparent)' }} />
 
         {/* Heading */}
         <div className="text-center">
-          <div className="text-sm font-black tracking-[0.2em] uppercase" style={{ color: '#FFD700' }}>
+          <div className="text-sm font-black tracking-[0.2em] uppercase" style={{ color: '#00C07A' }}>
             SELECT DENOMINATION
           </div>
           <div className="text-[10px] text-gray-500 mt-1">Choose your coin value to start</div>

@@ -1,6 +1,5 @@
 export function formatCredits(amount: number): string {
-  if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}K`;
-  return `$${amount.toFixed(2)}`;
+  return `$${amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
 }
 
 export function lerp(a: number, b: number, t: number): number {
