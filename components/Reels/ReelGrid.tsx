@@ -14,8 +14,8 @@ export function ReelGrid() {
   const reelStopDelays     = useGameStore(s => s.reelStopDelays);
   const phase              = useGameStore(s => s.phase);
   const isFreeSpinActive   = useGameStore(s => s.isFreeSpinActive);
-  const freeSpinsRemaining = useGameStore(s => s.freeSpinsRemaining);
   const freeSpinsTotal     = useGameStore(s => s.freeSpinsTotal);
+  const freeSpinsPlayed    = useGameStore(s => s.freeSpinsPlayed);
 
   const isSpinning = phase === 'SPINNING';
 
@@ -140,7 +140,7 @@ export function ReelGrid() {
                 🥁 FREE GAMES
               </span>
               <span className="text-yellow-300 font-black text-xl tabular-nums leading-none">
-                {freeSpinsTotal - freeSpinsRemaining + 1}
+                {freeSpinsPlayed + 1}
                 <span className="text-gray-400 font-normal text-sm">/{freeSpinsTotal}</span>
               </span>
             </div>

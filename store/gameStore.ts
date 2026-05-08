@@ -46,6 +46,7 @@ interface GameState {
   bonusTriggerBet:    number;
   freeSpinsRemaining: number;
   freeSpinsTotal:     number;   // total spins awarded (for X/6 display)
+  freeSpinsPlayed:    number;   // spins completed so far (for N/6 display)
   freeSpinsMultiplier: number;
   isFreeSpinActive:   boolean;
 
@@ -132,6 +133,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   bonusTriggerBet:     0,
   freeSpinsRemaining:  0,
   freeSpinsTotal:      0,
+  freeSpinsPlayed:     0,
   freeSpinsMultiplier: 1,
   isFreeSpinActive:    false,
 
@@ -279,9 +281,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       // ── Priority: Buffalo Rush > Scatter Free Spins > Free Spin continue > Normal ──
 
       if (nuggetResult.triggerFeature) {
-        // 6+ Buffalo → Buffalo Rush; seed count: 40%=8, 30%=9, 20%=10, 7%=11, 3%=12
+        // 6+ Buffalo → Buffalo Rush; seed count: 50%=1, 30%=2, 15%=3, 5%=4
+        // Kept low so filling all 15 (Grand Jackpot) is genuinely rare
         const rng       = Math.random();
-        const seedCount = rng < 0.40 ? 8 : rng < 0.70 ? 9 : rng < 0.90 ? 10 : rng < 0.97 ? 11 : 12;
+        const seedCount = rng < 0.50 ? 1 : rng < 0.80 ? 2 : rng < 0.95 ? 3 : 4;
         const seeds     = Array(15).fill(false).map((_, i) => i < seedCount);
         set({ phase: 'BONUS_ACTIVE', activeBonusType: 'NUGGET_HOLD', nuggetHoldSeeds: seeds });
 
@@ -294,6 +297,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           bonusTriggerBet:     totalBet,
           freeSpinsRemaining:  freeConfig.spinsAwarded,
           freeSpinsTotal:      freeConfig.spinsAwarded,
+          freeSpinsPlayed:     0,
           freeSpinsMultiplier: freeConfig.multiplier,
         });
 
@@ -302,7 +306,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         // When the session ends, lastWinAmount holds the total so the player
         // can choose to Take Win or Gamble, exactly like a normal spin.
         const newFSTW = parseFloat((freeSpinsTotalWin + totalWin).toFixed(2));
-        set({ freeSpinsTotalWin: newFSTW });
+        const newPlayed = get().freeSpinsPlayed + 1;
+        set({ freeSpinsTotalWin: newFSTW, freeSpinsPlayed: newPlayed });
 
         if (newFreeSpinsRemaining > 0) {
           set({ phase: 'FREE_SPINS' });
@@ -313,6 +318,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             freeSpinsMultiplier: 1,
             lastWinAmount:       newFSTW,
             freeSpinsTotalWin:   0,
+            freeSpinsPlayed:     0,
             bigWinTier:          bigWinTier as 'WIN' | 'GREAT' | 'BIG' | 'MEGA' | null,
           });
         }
@@ -387,6 +393,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         phase:               'FREE_SPINS',
         isFreeSpinActive:    true,
         freeSpinsRemaining:  prize.config.spinsAwarded,
+        freeSpinsPlayed:     0,
         freeSpinsMultiplier: prize.config.multiplier,
         activeBonusType:     null,
         freeSpinsTotalWin:   0,
