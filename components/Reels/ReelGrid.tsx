@@ -92,7 +92,7 @@ export function ReelGrid() {
         {Array.from({ length: 5 }, (_, col) => {
           const isAnticipating = anticipationCols.includes(col);
           const anticType = isAnticipating
-            ? (col === 3 ? 'scatter' : 'buffalo') as 'scatter' | 'buffalo'
+            ? (col === 3 ? 'scatter' : 'spin') as 'scatter' | 'spin'
             : false;
           return (
             <SpinningReel

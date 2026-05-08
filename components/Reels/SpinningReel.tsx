@@ -61,7 +61,7 @@ interface Props {
   spinning: boolean;
   stopDelay: number;
   winLines: WinLine[];
-  anticipation?: 'scatter' | 'buffalo' | false;
+  anticipation?: 'scatter' | 'buffalo' | 'spin' | false;
 }
 
 export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines, anticipation }: Props) {
@@ -250,14 +250,12 @@ export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines,
 
       {/* ── Anticipation overlay ── */}
       <AnimatePresence>
-        {spinning && anticipation && (
+        {spinning && anticipation && anticipation !== 'spin' && (
           <motion.div
             key="anticipation"
             style={{
               position: 'absolute', inset: 0,
-              borderRadius: 10,
-              zIndex: 25,
-              pointerEvents: 'none',
+              borderRadius: 10, zIndex: 25, pointerEvents: 'none',
               border: `3px solid ${anticipation === 'scatter' ? '#FFD700' : '#FF6B00'}`,
               overflow: 'hidden',
             }}
@@ -265,7 +263,6 @@ export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines,
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* Pulsing coloured glow */}
             <motion.div
               style={{
                 position: 'absolute', inset: 0,
@@ -276,8 +273,6 @@ export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines,
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 0.5, repeat: Infinity }}
             />
-
-            {/* Vertical scan lines — speed effect */}
             <motion.div
               style={{
                 position: 'absolute', inset: 0,
@@ -288,33 +283,70 @@ export function SpinningReel({ col, finalSymbols, spinning, stopDelay, winLines,
               animate={{ backgroundPositionY: ['0px', '24px'] }}
               transition={{ duration: 0.18, repeat: Infinity, ease: 'linear' }}
             />
-
-            {/* Icon badge */}
             <motion.div
               style={{
-                position: 'absolute',
-                top: '50%', left: '50%',
+                position: 'absolute', top: '50%', left: '50%',
                 transform: 'translate(-50%, -50%)',
                 fontSize: 36,
                 filter: `drop-shadow(0 0 12px ${anticipation === 'scatter' ? '#FFD700' : '#FF6B00'})`,
               }}
-              animate={{ scale: [0.85, 1.15, 0.85], rotate: anticipation === 'buffalo' ? [-5, 5, -5] : [0, 0, 0] }}
+              animate={{ scale: [0.85, 1.15, 0.85] }}
               transition={{ duration: 0.5, repeat: Infinity }}
             >
               {anticipation === 'scatter' ? '🥁' : '🐃'}
             </motion.div>
-
-            {/* Corner border flash */}
             <motion.div
-              style={{
-                position: 'absolute', inset: 0,
-                borderRadius: 10,
+              style={{ position: 'absolute', inset: 0, borderRadius: 10,
                 boxShadow: anticipation === 'scatter'
                   ? '0 0 24px rgba(255,215,0,0.6), inset 0 0 16px rgba(255,215,0,0.15)'
                   : '0 0 24px rgba(255,100,0,0.6), inset 0 0 16px rgba(255,100,0,0.18)',
               }}
               animate={{ opacity: [0.6, 1, 0.6] }}
               transition={{ duration: 0.4, repeat: Infinity }}
+            />
+          </motion.div>
+        )}
+
+        {/* ── Spin anticipation — reel 5 blur/speed effect ── */}
+        {spinning && anticipation === 'spin' && (
+          <motion.div
+            key="spin-anticipation"
+            style={{ position: 'absolute', inset: 0, borderRadius: 10, zIndex: 25, pointerEvents: 'none', overflow: 'hidden' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* Blur overlay — simulates reel spinning faster */}
+            <motion.div
+              style={{
+                position: 'absolute', inset: 0,
+                backdropFilter: 'blur(3px)',
+                background: 'linear-gradient(180deg, rgba(255,140,0,0.12) 0%, rgba(255,80,0,0.08) 50%, rgba(255,140,0,0.12) 100%)',
+              }}
+              animate={{ opacity: [0.6, 1, 0.6] }}
+              transition={{ duration: 0.25, repeat: Infinity }}
+            />
+            {/* Fast vertical speed lines */}
+            <motion.div
+              style={{
+                position: 'absolute', inset: 0,
+                background: 'repeating-linear-gradient(180deg, transparent 0px, transparent 6px, rgba(255,160,0,0.12) 6px, rgba(255,160,0,0.12) 8px)',
+              }}
+              animate={{ backgroundPositionY: ['0px', '16px'] }}
+              transition={{ duration: 0.08, repeat: Infinity, ease: 'linear' }}
+            />
+            {/* Flashing amber border */}
+            <motion.div
+              style={{ position: 'absolute', inset: 0, borderRadius: 10,
+                border: '3px solid #FF8C00',
+                boxShadow: '0 0 28px rgba(255,140,0,0.8), inset 0 0 18px rgba(255,100,0,0.2)',
+              }}
+              animate={{ opacity: [0.5, 1, 0.5], boxShadow: [
+                '0 0 18px rgba(255,140,0,0.5), inset 0 0 10px rgba(255,100,0,0.1)',
+                '0 0 40px rgba(255,180,0,1.0), inset 0 0 24px rgba(255,140,0,0.35)',
+                '0 0 18px rgba(255,140,0,0.5), inset 0 0 10px rgba(255,100,0,0.1)',
+              ]}}
+              transition={{ duration: 0.22, repeat: Infinity }}
             />
           </motion.div>
         )}
