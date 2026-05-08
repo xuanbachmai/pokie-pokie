@@ -5,17 +5,45 @@ import { shuffle } from './utils';
 /**
  * Build a reel strip.
  * @param includeScatter  false for outer reels (0 and 4) — scatter never appears there
+ *
+ * Scatter gap rule: no two scatter symbols may be within 2 positions of each other.
+ * The visible window is 3 rows, so this guarantees at most 1 scatter shows per reel.
  */
 function buildReelStrip(includeScatter: boolean): SymbolId[] {
   const strip: SymbolId[] = [];
   for (const sym of Object.values(SYMBOLS)) {
-    // Skip scatter on outer reels; keep it (weight 1) on middle reels
     if (sym.isScatter && sym.id === SymbolId.SCATTER && !includeScatter) continue;
     for (let i = 0; i < sym.weight; i++) strip.push(sym.id);
   }
   const shuffled = shuffle(strip);
   while (shuffled.length < REEL_SIZE) shuffled.push(...shuffle(strip));
-  return shuffled.slice(0, REEL_SIZE);
+  const result = shuffled.slice(0, REEL_SIZE);
+
+  if (includeScatter) {
+    // Find a low-value non-scatter fallback symbol (use JADE / rice)
+    const fallback = SymbolId.JADE;
+    // Enforce minimum gap of 3 between consecutive scatter positions
+    // (visible window = 3, so gap ≥ 3 ensures at most 1 scatter visible at a time)
+    let lastScatterIdx = -99;
+    for (let i = 0; i < result.length; i++) {
+      if (result[i] === SymbolId.SCATTER) {
+        if (i - lastScatterIdx < 3) {
+          result[i] = fallback; // too close — replace with a filler symbol
+        } else {
+          lastScatterIdx = i;
+        }
+      }
+    }
+    // Also check wrap-around (last scatter vs first scatter on the circular strip)
+    const firstIdx = result.indexOf(SymbolId.SCATTER);
+    const lastIdx  = result.lastIndexOf(SymbolId.SCATTER);
+    if (firstIdx !== -1 && lastIdx !== firstIdx) {
+      const wrapGap = (result.length - lastIdx) + firstIdx;
+      if (wrapGap < 3) result[firstIdx] = fallback;
+    }
+  }
+
+  return result;
 }
 
 // Reels 0 and 4 have no scatter; reels 1, 2, 3 do
