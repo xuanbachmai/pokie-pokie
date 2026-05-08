@@ -12,7 +12,6 @@ import {
   trackWin,
   trackFeature,
   trackJackpotWin,
-  trackGamble,
 } from '@/lib/analytics';
 
 export function useAnalytics() {
@@ -62,25 +61,4 @@ export function useAnalytics() {
     return unsub;
   }, []);
 
-  // ── Gamble outcomes ──────────────────────────────────────────────────
-  useEffect(() => {
-    // Subscribe to gamble result — watch resolveGamble side-effects
-    // We watch gambleAmount going to 0 (loss) or doubling (win)
-    let prevGambleAmount = 0;
-    const unsub = useGameStore.subscribe(state => {
-      const { phase, gambleAmount } = state;
-      if ((phase as string) === 'GAMBLE_ACTIVE') {
-        prevGambleAmount = gambleAmount;
-      } else if (prevGambleAmount > 0 && (phase as string) !== 'GAMBLE_ACTIVE') {
-        // Gamble just resolved
-        const won = gambleAmount > prevGambleAmount;
-        const lost = gambleAmount === 0 && prevGambleAmount > 0;
-        if (won || lost) {
-          trackGamble(won, prevGambleAmount);
-        }
-        prevGambleAmount = 0;
-      }
-    });
-    return unsub;
-  }, []);
 }

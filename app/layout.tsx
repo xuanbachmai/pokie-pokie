@@ -20,6 +20,9 @@ const oswald = Oswald({
 
 export const metadata: Metadata = {
   title: 'Vietnam Maze',
+  icons: {
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌾</text></svg>",
+  },
   description: 'Vietnamese-themed 5-reel slot machine with progressive jackpots, bonus games, and 3D effects',
   openGraph: {
     title: 'Vietnam Maze — Pokies Simulator',

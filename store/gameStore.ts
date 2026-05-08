@@ -309,7 +309,15 @@ export const useGameStore = create<GameState>((set, get) => ({
         const newPlayed = get().freeSpinsPlayed + 1;
         set({ freeSpinsTotalWin: newFSTW, freeSpinsPlayed: newPlayed });
 
-        if (newFreeSpinsRemaining > 0) {
+        // Scatter retrigger during free spins — award 6 more spins
+        if (scatterResult.triggerBonus) {
+          const bonus = 6;
+          set({
+            freeSpinsRemaining: newFreeSpinsRemaining + bonus,
+            freeSpinsTotal:     get().freeSpinsTotal + bonus,
+            phase:              'FREE_SPINS',
+          });
+        } else if (newFreeSpinsRemaining > 0) {
           set({ phase: 'FREE_SPINS' });
         } else {
           set({
