@@ -59,7 +59,6 @@ function MiniCard({ card, won }: { card: CardDraw; won: boolean }) {
 function CardFace({ card }: { card: CardDraw }) {
   const sym   = SUIT_SYMBOL[card.suit];
   const color = SUIT_COLOR[card.suit];
-  const rank  = rankLabel(card.value);
   const isRed = card.color === 'red';
   return (
     <div
@@ -72,24 +71,14 @@ function CardFace({ card }: { card: CardDraw }) {
         boxShadow: `inset 0 0 0 6px rgba(0,0,0,0.04), 0 4px 20px ${isRed ? 'rgba(180,0,0,0.25)' : 'rgba(0,0,0,0.3)'}`,
       }}
     >
-      {/* Top-left corner */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
-        <span style={{ fontSize: 22, fontWeight: 900 }}>{rank}</span>
-        <span style={{ fontSize: 18, marginTop: -2 }}>{sym}</span>
-      </div>
-      {/* Centre suit */}
       <div style={{
-        textAlign: 'center',
-        fontSize: 80,
+        flex: 1,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 90,
         lineHeight: 1,
         filter: `drop-shadow(0 3px 6px ${isRed ? 'rgba(180,0,0,0.35)' : 'rgba(0,0,0,0.3)'})`,
       }}>
         {sym}
-      </div>
-      {/* Bottom-right corner (rotated) */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1, transform: 'rotate(180deg)' }}>
-        <span style={{ fontSize: 22, fontWeight: 900 }}>{rank}</span>
-        <span style={{ fontSize: 18, marginTop: -2 }}>{sym}</span>
       </div>
     </div>
   );
