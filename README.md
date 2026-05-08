@@ -43,8 +43,6 @@ Building it taught me more about why people gamble than any paper I read.
 
 🎮 **[pokiespokies.vercel.app](https://pokiespokies.vercel.app)**
 
-📊 Stats dashboard: [pokiespokies.vercel.app/stats](https://pokiespokies.vercel.app/stats)
-
 ---
 
 *Built with Next.js · Zustand · Supabase · Three.js · Framer Motion*
