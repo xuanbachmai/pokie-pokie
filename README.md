@@ -4,7 +4,7 @@
 
 ## Why I built this
 
-I moved to Australia for university, and one of the first things that caught me off-guard
+I moved to Australia for university, and after 3 years, one of the first things that caught me off-guard
 wasn't the weather or the accent — it was the pokies.
 
 Walk into any pub, any RSL club, any corner of a shopping strip, and there they are:
@@ -32,8 +32,7 @@ So I did.
 machines popular in Australian venues. It has a proper RTP model, a shared progressive
 jackpot across all players (backed by a real database), a gamble feature, free spins, a
 Buffalo Rush bonus round, and a Tiến Lên bonus that pays out the Grand Jackpot if you
-fill all five columns. It also has a live analytics dashboard so you can watch the house
-edge do its quiet, remorseless work in real time.
+fill all five columns. 
 
 Building it taught me more about why people gamble than any paper I read.
 
