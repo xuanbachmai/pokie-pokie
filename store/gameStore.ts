@@ -198,7 +198,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     const totalBet = parseFloat((betPerLine * activeLines).toFixed(2));
     if (!isFreeSpinActive && effectiveBalance < totalBet) return;
 
-    const result = spin();
+    // On spins 5 & 6 of the Trống Đồng free games, boost buffalo appearance
+    const { isFreeSpinActive: fsActive, freeSpinsRemaining: fsLeft } = get();
+    const isLateFree = fsActive && fsLeft <= 2;
+    const result = spin(isLateFree ? { lateFreeSpin: true } : undefined);
 
     set({
       phase:         'SPINNING',
