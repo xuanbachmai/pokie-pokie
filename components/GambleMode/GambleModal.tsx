@@ -50,7 +50,7 @@ function MiniCard({ card, won }: { card: CardDraw; won: boolean }) {
         color,
       }}
     >
-      <div style={{ fontSize: 18, lineHeight: 1 }}>{sym}</div>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, lineHeight: 1 }}>{sym}</div>
     </motion.div>
   );
 }
