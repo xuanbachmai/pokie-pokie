@@ -281,10 +281,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       // ── Priority: Buffalo Rush > Scatter Free Spins > Free Spin continue > Normal ──
 
       if (nuggetResult.triggerFeature) {
-        // 6+ Buffalo → Buffalo Rush; seed count: 50%=1, 30%=2, 15%=3, 5%=4
-        // Kept low so filling all 15 (Grand Jackpot) is genuinely rare
-        const rng       = Math.random();
-        const seedCount = rng < 0.50 ? 1 : rng < 0.80 ? 2 : rng < 0.95 ? 3 : 4;
+        // Pre-seed exactly as many slots as buffaloes that triggered the feature
+        const seedCount = Math.min(nuggetResult.count, 15);
         const seeds     = Array(15).fill(false).map((_, i) => i < seedCount);
         set({ phase: 'BONUS_ACTIVE', activeBonusType: 'NUGGET_HOLD', nuggetHoldSeeds: seeds });
 
