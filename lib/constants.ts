@@ -191,7 +191,7 @@ export const DENOM_CONFIGS: DenomConfig[] = [
   { denomination: 0.01, label: '1¢',  color: '#B87333', lines: [1, 5, 10, 25, 50], multiples: [1, 2, 3, 5, 10] },
   { denomination: 0.02, label: '2¢',  color: '#A8A9AD', lines: [1, 5, 10, 25, 50], multiples: [1, 2, 3, 5, 10] },
   { denomination: 0.05, label: '5¢',  color: '#4CAF50', lines: [10, 25],           multiples: [1, 2, 3, 4, 8]  },
-  { denomination: 0.10, label: '10¢', color: '#2196F3', lines: [10, 25],           multiples: [1, 2, 3]        },
+  { denomination: 0.10, label: '10¢', color: '#2196F3', lines: [10, 25],           multiples: [1, 2, 3, 4]     },
   { denomination: 0.20, label: '20¢', color: '#9C27B0', lines: [1, 5, 10, 20, 25], multiples: [1, 2]          },
   { denomination: 1.00, label: '$1',  color: '#FFD700', lines: [1, 2, 3, 4, 5],   multiples: [1, 2]           },
   { denomination: 2.00, label: '$2',  color: '#FF4D6D', lines: [1, 3, 5],         multiples: [1]             },

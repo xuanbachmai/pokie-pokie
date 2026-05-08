@@ -110,6 +110,22 @@ export function spin(): SpinResult {
     return [0, 1, 2].map(row => strip[(stop + row) % strip.length]);
   });
   enforceBuffaloLimits(visibleGrid);
+
+  // Hard guard: at most 1 scatter per reel in the visible window.
+  // Replace any extras with JADE (rice) — lowest-value symbol.
+  for (let col = 0; col < visibleGrid.length; col++) {
+    let scatterSeen = false;
+    for (let row = 0; row < visibleGrid[col].length; row++) {
+      if (visibleGrid[col][row] === SymbolId.SCATTER) {
+        if (scatterSeen) {
+          visibleGrid[col][row] = SymbolId.JADE; // remove duplicate
+        } else {
+          scatterSeen = true;
+        }
+      }
+    }
+  }
+
   return { visibleGrid, stopPositions };
 }
 
