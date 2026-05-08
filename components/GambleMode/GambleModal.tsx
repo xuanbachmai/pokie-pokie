@@ -42,10 +42,8 @@ function MiniCard({ card, won }: { card: CardDraw; won: boolean }) {
       style={{
         width: 32, height: 46,
         background: 'linear-gradient(160deg, #FFFEF8, #F5F0E5)',
-        border: `2px solid ${won ? '#00C853' : '#D32F2F'}`,
-        boxShadow: won
-          ? '0 0 8px rgba(0,200,83,0.55), 0 2px 6px rgba(0,0,0,0.35)'
-          : '0 0 6px rgba(211,47,47,0.5), 0 2px 6px rgba(0,0,0,0.35)',
+        border: '2px solid #222',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
         padding: '3px 3px',
         color,
       }}
