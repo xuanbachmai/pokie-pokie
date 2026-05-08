@@ -58,12 +58,11 @@ export const REEL_STRIPS: SymbolId[][] = [
 /**
  * Enforce buffalo constraints on the visible grid (mutates in place):
  *   - At most 1 Diamond Buffalo (SPECIAL) per spin — extras become NUGGET.
- *   - Total buffalo (NUGGET + SPECIAL) is capped below 6 in 85% of normal spins
+ *   - Total buffalo (NUGGET + SPECIAL) is capped below 6 in 85% of spins
  *     so the Buffalo Rush feature trigger stays rare while 2-3 per column
  *     can still appear regularly for visual excitement.
- *   - lateFreeSpin: skip the cap so any natural 6+ passes through.
  */
-function enforceBuffaloLimits(grid: SymbolId[][], lateFreeSpin = false): void {
+function enforceBuffaloLimits(grid: SymbolId[][]): void {
   // 1. SPECIAL limit — at most 1 per spin, only 25% chance it survives
   const specialPositions: Array<[number, number]> = [];
   for (let col = 0; col < grid.length; col++)
@@ -82,23 +81,19 @@ function enforceBuffaloLimits(grid: SymbolId[][], lateFreeSpin = false): void {
     }
   }
 
-  // 2. Cap total buffalo — in normal spins, 85% chance to reduce to 3-5.
-  //    In late free spins (spin 5-6 of Trống Đồng feature), skip the cap so
-  //    any naturally occurring 6+ can pass through to trigger Buffalo Rush.
-  if (!lateFreeSpin) {
-    const allBuffaloPos: Array<[number, number]> = [];
-    for (let col = 0; col < grid.length; col++)
-      for (let row = 0; row < grid[col].length; row++)
-        if (grid[col][row] === SymbolId.NUGGET || grid[col][row] === SymbolId.SPECIAL)
-          allBuffaloPos.push([col, row]);
+  // 2. Cap total buffalo — if 6+ would appear, 85% chance to reduce to 3-5
+  const allBuffaloPos: Array<[number, number]> = [];
+  for (let col = 0; col < grid.length; col++)
+    for (let row = 0; row < grid[col].length; row++)
+      if (grid[col][row] === SymbolId.NUGGET || grid[col][row] === SymbolId.SPECIAL)
+        allBuffaloPos.push([col, row]);
 
-    if (allBuffaloPos.length >= 6 && Math.random() < 0.85) {
-      const keepCount = 3 + Math.floor(Math.random() * 3);
-      const shuffled = allBuffaloPos.sort(() => Math.random() - 0.5);
-      for (let i = keepCount; i < shuffled.length; i++) {
-        const [col, row] = shuffled[i];
-        grid[col][row] = SymbolId.JADE;
-      }
+  if (allBuffaloPos.length >= 6 && Math.random() < 0.85) {
+    const keepCount = 3 + Math.floor(Math.random() * 3);
+    const shuffled = allBuffaloPos.sort(() => Math.random() - 0.5);
+    for (let i = keepCount; i < shuffled.length; i++) {
+      const [col, row] = shuffled[i];
+      grid[col][row] = SymbolId.JADE;
     }
   }
 }
@@ -107,27 +102,28 @@ function enforceBuffaloLimits(grid: SymbolId[][], lateFreeSpin = false): void {
  * Late-free-spin buffalo boost (mutates grid in place).
  * Called on spin 5 and 6 of the Trống Đồng free games feature.
  *
- * ~50 % chance to force at least 6 buffalo by swapping low-value symbols.
- * A small 8 % share of the forced symbols become Diamond Buffalo (SPECIAL)
- * so the Tiến Lên feature can still occasionally fire, but stays rare.
+ * Runs AFTER enforceBuffaloLimits so the normal cap still applies first.
+ * 70 % chance to swap low-value symbols up to reach 6 buffalo — not a
+ * guarantee, just an increased probability. Diamond Buffalo (SPECIAL) gets
+ * an 8 % share of the swapped slots so Tiến Lên stays rare but possible.
  */
 function boostBuffaloForLateFreeSpin(grid: SymbolId[][]): void {
-  // Count existing buffalo
+  // 30 % of the time, leave the grid completely untouched
+  if (Math.random() >= 0.70) return;
+
+  // Count buffalo that survived enforceBuffaloLimits
   let count = 0;
   for (let col = 0; col < grid.length; col++)
     for (let row = 0; row < grid[col].length; row++)
       if (grid[col][row] === SymbolId.NUGGET || grid[col][row] === SymbolId.SPECIAL)
         count++;
 
-  // Already triggers Buffalo Rush — nothing to do
+  // Already at 6+ — Buffalo Rush will trigger naturally
   if (count >= 6) return;
-
-  // 50 % chance to force a 6-buffalo result on this spin
-  if (Math.random() >= 0.50) return;
 
   const needed = 6 - count;
 
-  // Collect replaceable positions (low-value symbols only — don't touch wilds/scatters)
+  // Collect low-value positions that can be swapped (never touch wilds/scatters)
   const low = [SymbolId.JADE, SymbolId.COIN, SymbolId.LOTUS, SymbolId.KOI];
   const candidates: Array<[number, number]> = [];
   for (let col = 0; col < grid.length; col++)
@@ -135,7 +131,6 @@ function boostBuffaloForLateFreeSpin(grid: SymbolId[][]): void {
       if (low.includes(grid[col][row]))
         candidates.push([col, row]);
 
-  // Shuffle and fill up to `needed` positions
   candidates.sort(() => Math.random() - 0.5);
   for (let i = 0; i < Math.min(needed, candidates.length); i++) {
     const [col, row] = candidates[i];
@@ -154,7 +149,7 @@ export function spin(opts?: { lateFreeSpin?: boolean }): SpinResult {
     const stop = stopPositions[col];
     return [0, 1, 2].map(row => strip[(stop + row) % strip.length]);
   });
-  enforceBuffaloLimits(visibleGrid, lateFreeSpin);
+  enforceBuffaloLimits(visibleGrid);
 
   // On the last two free spins (spin 5 & 6), boost buffalo appearance
   if (lateFreeSpin) {
