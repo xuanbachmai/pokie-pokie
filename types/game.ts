@@ -71,7 +71,7 @@ export interface FreeSpinsConfig {
 
 export type BonusPrize =
   | { type: 'FREE_SPINS'; config: FreeSpinsConfig }
-  | { type: 'NUGGET_HOLD'; count: number; totalAmount: number };
+  | { type: 'NUGGET_HOLD'; count: number; totalAmount: number; skipGamble?: boolean };
 
 export interface NuggetResult {
   count: number;

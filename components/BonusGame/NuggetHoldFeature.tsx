@@ -321,6 +321,8 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
   const totalBet        = betPerLine * activeLines;
 
   const miniCountRef = useRef({ current: 0 });
+  // Prevent double-triggering Grand Jackpot when tienLen already claimed it
+  const grandAlreadyTriggered = useRef(false);
 
   const [slots, setSlots] = useState<(SlotValue | null)[]>(() =>
     nuggetHoldSeeds.map(seeded =>
@@ -496,13 +498,16 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
             if (newReSpins === 0 || allFilled) {
               let prize = resolvedSlots.reduce((sum, v) => sum + (v?.amount ?? 0), 0);
               if (allFilled) {
-                const grandAmount = useJackpotStore.getState().triggerGrandJackpot();
-                winJackpotDB('grand', GRAND_JACKPOT_SEED).catch(() => {});
-                prize += grandAmount;
-                useJackpotStore.getState().setGrandJackpotTotal(parseFloat(prize.toFixed(2)));
+                // Only trigger Grand Jackpot once — tienLen may have already claimed it
+                if (!grandAlreadyTriggered.current) {
+                  const grandAmount = useJackpotStore.getState().triggerGrandJackpot();
+                  winJackpotDB('grand', GRAND_JACKPOT_SEED).catch(() => {});
+                  prize += grandAmount;
+                  useJackpotStore.getState().setGrandJackpotTotal(parseFloat(prize.toFixed(2)));
+                  trackJackpotWin('grand', parseFloat(prize.toFixed(2)));
+                }
                 setIsGrandJackpot(true);
                 getAudio().playCelebration('grand');
-                trackJackpotWin('grand', parseFloat(prize.toFixed(2)));
               } else if (resolvedSlots.some(s => s && s.kind !== 'credits' && s.kind !== 'DIAMOND')) {
                 getAudio().playCelebration('mega');
                 // Track any tier jackpot wins; reset Mega in DB if won
@@ -595,6 +600,7 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
               if (allFilled) {
                 // All 5 columns filled → trigger Grand Jackpot!
                 grandBonus = useJackpotStore.getState().triggerGrandJackpot();
+                grandAlreadyTriggered.current = true;
                 winJackpotDB('grand', GRAND_JACKPOT_SEED).catch(() => {});
                 const tienLenTotal = resolvedPrizes.reduce((s, p) => s + (p?.amount ?? 0), 0);
                 useJackpotStore.getState().setGrandJackpotTotal(
@@ -665,7 +671,11 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
     if (typeof window !== 'undefined') window.speechSynthesis?.cancel();
 
     const filledCount = slots.filter(Boolean).length;
-    resolveBonus({ type: 'NUGGET_HOLD', count: filledCount, totalAmount: totalPrize });
+    // Grand jackpot and any tier jackpot wins skip gamble — credited directly
+    const hasAnyJackpot = isGrandJackpot || slots.some(
+      s => s && s.kind !== 'credits' && s.kind !== 'DIAMOND'
+    );
+    resolveBonus({ type: 'NUGGET_HOLD', count: filledCount, totalAmount: totalPrize, skipGamble: hasAnyJackpot });
     onClose();
   }
 

@@ -392,13 +392,25 @@ export const useGameStore = create<GameState>((set, get) => ({
         freeSpinsTotalWin:   0,
       });
     } else if (prize.type === 'NUGGET_HOLD') {
-      // Do NOT add to balance yet — keep as pending win so Gamble/Take Win works correctly
-      set({
-        activeBonusType:   null,
-        phase:             'IDLE',
-        lastWinAmount:     parseFloat(prize.totalAmount.toFixed(2)),
-        totalWinThisSpin:  parseFloat(prize.totalAmount.toFixed(2)),
-      });
+      const amount = parseFloat(prize.totalAmount.toFixed(2));
+      if (prize.skipGamble) {
+        // Grand / Mega jackpot wins go straight to credit — no gamble offered
+        set({
+          activeBonusType:  null,
+          phase:            'IDLE',
+          balance:          parseFloat((balance + amount).toFixed(2)),
+          lastWinAmount:    0,
+          totalWinThisSpin: amount,
+        });
+      } else {
+        // Regular bonus win — keep as pending so Gamble/Take Win works
+        set({
+          activeBonusType:  null,
+          phase:            'IDLE',
+          lastWinAmount:    amount,
+          totalWinThisSpin: amount,
+        });
+      }
     }
   },
 
