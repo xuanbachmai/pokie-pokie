@@ -53,17 +53,6 @@ function MiniCard({ card, won }: { card: CardDraw; won: boolean }) {
       <div style={{ fontSize: 8, fontWeight: 900, lineHeight: 1, alignSelf: 'flex-start' }}>{rank}</div>
       <div style={{ fontSize: 14, lineHeight: 1 }}>{sym}</div>
       <div style={{ fontSize: 8, fontWeight: 900, lineHeight: 1, alignSelf: 'flex-end', transform: 'rotate(180deg)' }}>{rank}</div>
-      {/* Win / lose dot */}
-      <div style={{
-        position: 'absolute', top: -5, right: -5,
-        width: 11, height: 11, borderRadius: '50%',
-        background: won ? '#00C853' : '#D32F2F',
-        border: '1.5px solid rgba(0,0,0,0.25)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 7, color: '#fff', fontWeight: 900,
-      }}>
-        {won ? '✓' : '✗'}
-      </div>
     </motion.div>
   );
 }
