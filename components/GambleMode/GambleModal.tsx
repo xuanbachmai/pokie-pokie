@@ -379,7 +379,7 @@ export function GambleModal() {
             {/* ── Guess buttons ── */}
             <div
               className="px-4 pb-6 flex flex-col gap-2.5"
-              style={{ opacity: flipped ? 0 : 1, pointerEvents: flipped ? 'none' : 'auto', transition: 'opacity 0.15s' }}
+              style={{ opacity: flipped ? 0.35 : 1, pointerEvents: flipped ? 'none' : 'auto', filter: flipped ? 'grayscale(0.6)' : 'none', transition: 'opacity 0.2s, filter 0.2s' }}
             >
                 {/* Red / Black */}
                 <div className="grid grid-cols-2 gap-2">
