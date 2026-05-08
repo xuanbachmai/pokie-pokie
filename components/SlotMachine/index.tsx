@@ -159,15 +159,18 @@ export function SlotMachine() {
           >
             {/* Title row */}
             <div className="flex items-center justify-between gap-2">
-              {/* Add Credits button */}
-              <button
-                onClick={openTopUp}
-                className="flex flex-col items-center justify-center rounded-xl px-3 py-2"
-                style={{ background: 'rgba(0,200,80,0.12)', border: '1px solid rgba(0,200,80,0.35)', color: '#00C853', minWidth: 56 }}
-              >
-                <span className="text-xl leading-none font-black">+</span>
-                <span className="text-[9px] font-black tracking-wide leading-none mt-1">CREDITS</span>
-              </button>
+              {/* Left column: Add Credits + Donate */}
+              <div className="flex flex-col gap-1.5">
+                <button
+                  onClick={openTopUp}
+                  className="flex flex-col items-center justify-center rounded-xl px-3 py-2"
+                  style={{ background: 'rgba(0,200,80,0.12)', border: '1px solid rgba(0,200,80,0.35)', color: '#00C853', minWidth: 56 }}
+                >
+                  <span className="text-xl leading-none font-black">+</span>
+                  <span className="text-[9px] font-black tracking-wide leading-none mt-1">CREDITS</span>
+                </button>
+                <DonateButton />
+              </div>
 
               <div className="text-center flex-1">
                 <h1 className="text-3xl font-black tracking-widest"
@@ -236,6 +239,67 @@ export function SlotMachine() {
           </AnimatePresence>
         </>
       )}
+    </div>
+  );
+}
+
+// ── Donate Button (compact, sits below CREDITS in the top-left) ──────────────
+function DonateButton() {
+  const [showQR, setShowQR] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setShowQR(v => !v)}
+        className="flex flex-col items-center justify-center rounded-xl px-3 py-2"
+        style={{
+          background: showQR ? 'rgba(0,120,200,0.22)' : 'rgba(0,100,180,0.12)',
+          border: `1px solid ${showQR ? 'rgba(0,156,222,0.6)' : 'rgba(0,156,222,0.3)'}`,
+          color: '#55AEFF',
+          minWidth: 56,
+          transition: 'all 0.2s',
+        }}
+        title="Support this demo"
+      >
+        <span className="text-base leading-none">☕</span>
+        <span className="text-[9px] font-black tracking-wide leading-none mt-1">DONATE</span>
+      </button>
+
+      <AnimatePresence>
+        {showQR && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.85, y: -4 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+            className="absolute left-0 top-full mt-2 z-[500] rounded-2xl p-4 flex flex-col items-center gap-2 shadow-2xl"
+            style={{
+              background: 'linear-gradient(160deg,#011020,#010e18)',
+              border: '1px solid rgba(0,156,222,0.4)',
+              minWidth: 160,
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <span className="text-[10px] font-black tracking-widest text-blue-300 uppercase">Support ☕</span>
+            <div className="rounded-xl overflow-hidden bg-white p-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/paypal-qr.png"
+                alt="PayPal QR — Xuan Bach Mai"
+                className="w-28 h-28 object-contain"
+              />
+            </div>
+            <span className="text-[9px] text-gray-500">Scan · Xuan Bach Mai</span>
+            <a
+              href="https://www.paypal.com/donate?business=bachmxuan%40gmail.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[9px] text-blue-400 underline underline-offset-2"
+            >
+              or click to open PayPal
+            </a>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

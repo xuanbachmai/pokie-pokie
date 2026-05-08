@@ -73,8 +73,29 @@ export function DepositScreen({ onComplete, isTopUp = false }: { onComplete: () 
           <div className="text-base font-black tracking-widest" style={{ color: '#00C07A' }}>
             💰 {isTopUp ? 'ADD MORE CREDITS' : 'SELECT DEPOSIT AMOUNT'}
           </div>
-          <div className="text-[10px] text-gray-500 mt-1">Credits are for entertainment only</div>
+          <div className="text-[10px] text-gray-500 mt-1">Credits are for entertainment only · No real money</div>
         </div>
+
+        {/* Disclaimer */}
+        {!isTopUp && (
+          <div
+            className="w-full rounded-xl px-4 py-3 text-center"
+            style={{ background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.15)' }}
+          >
+            <div className="flex items-center justify-center gap-1.5 mb-1.5">
+              <span className="text-yellow-400 text-sm">⚠️</span>
+              <span className="text-[10px] font-black tracking-widest uppercase text-yellow-400">
+                Simulation Only
+              </span>
+            </div>
+            <p className="text-[10px] text-gray-400 leading-[1.65]">
+              This is a <span className="text-white font-bold">free educational demo</span> — no real money, no real prizes.
+              The mechanics here (variable rewards, near-misses, free spins) mirror those engineered into real machines.
+              If it feels compelling, <span className="text-white">that&apos;s by design.</span>{' '}
+              Do your own research and play with responsibility.
+            </p>
+          </div>
+        )}
 
         {/* Deposit chips grid */}
         <div className="grid grid-cols-4 gap-3 w-full">
