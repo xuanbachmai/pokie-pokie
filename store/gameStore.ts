@@ -281,9 +281,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       // ── Priority: Buffalo Rush > Scatter Free Spins > Free Spin continue > Normal ──
 
       if (nuggetResult.triggerFeature) {
-        // Pre-seed exactly as many slots as buffaloes that triggered the feature
-        const seedCount = Math.min(nuggetResult.count, 15);
-        const seeds     = Array(15).fill(false).map((_, i) => i < seedCount);
+        // Seed exactly the slots where buffalo symbols appeared on the reels
+        // Grid index = row * 5 + col  (matches the 5×3 Buffalo Rush layout)
+        const seeds = Array(15).fill(false);
+        for (let col = 0; col < 5; col++)
+          for (let row = 0; row < 3; row++)
+            if (result.visibleGrid[col][row] === SymbolId.NUGGET || result.visibleGrid[col][row] === SymbolId.SPECIAL)
+              seeds[row * 5 + col] = true;
         set({ phase: 'BONUS_ACTIVE', activeBonusType: 'NUGGET_HOLD', nuggetHoldSeeds: seeds });
 
       } else if (scatterResult.triggerBonus && !isFreeSpinActive) {
