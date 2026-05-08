@@ -21,6 +21,18 @@ const oswald = Oswald({
 export const metadata: Metadata = {
   title: 'Vietnam Maze',
   description: 'Vietnamese-themed 5-reel slot machine with progressive jackpots, bonus games, and 3D effects',
+  openGraph: {
+    title: 'Vietnam Maze — Pokies Simulator',
+    description: 'Vietnamese-themed pokies simulator · Progressive jackpots · Free spins · Buffalo Rush',
+    url: 'https://pokiespokies.vercel.app',
+    siteName: 'Vietnam Maze',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Vietnam Maze — Pokies Simulator',
+    description: 'Vietnamese-themed pokies simulator · Progressive jackpots · Free spins · Buffalo Rush',
+  },
 };
 
 export const viewport: Viewport = {
