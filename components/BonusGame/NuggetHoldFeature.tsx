@@ -49,9 +49,9 @@ function randomSlotValue(
     return { kind: 'MINI', amount: jackpots[JackpotTier.MINI], label: 'MINI', color: '#00D187' };
   }
 
-  const minPrize  = Math.max(totalBet, denomination);
-  const maxPrize  = parseFloat((totalBet * 20).toFixed(2));
-  const mult      = [1, 1, 1, 2, 2, 3, 5][Math.floor(Math.random() * 7)];
+  const minPrize  = Math.max(totalBet * 0.5, denomination);
+  const maxPrize  = parseFloat((totalBet * 8).toFixed(2));
+  const mult      = [0.5, 0.5, 1, 1, 1, 2, 3][Math.floor(Math.random() * 7)];
   const rawAmount = parseFloat((totalBet * mult).toFixed(2));
   const amount    = Math.min(maxPrize, Math.max(minPrize, rawAmount));
   return { kind: 'credits', amount, label: formatCredits(amount), color: '#FFD700' };
@@ -65,8 +65,7 @@ function randomTienLenPrize(totalBet: number): SlotValue {
   if (r < 0.0006 ) return { kind: 'MAJOR', amount: jackpots[JackpotTier.MAJOR], label: 'MINOR', color: '#FF8C00' };
   if (r < 0.004  ) return { kind: 'MINOR', amount: jackpots[JackpotTier.MINOR], label: 'MAJOR', color: '#FFD700' };
   if (r < 0.080 ) return { kind: 'MINI',  amount: jackpots[JackpotTier.MINI],  label: 'MINI',  color: '#00D187' };
-  // Credit prizes: boosted multipliers (avg ~18×) since full-line is hard to achieve
-  const mult   = [5, 8, 12, 18, 28, 45][Math.floor(Math.random() * 6)];
+  const mult   = [2, 3, 5, 8, 12, 20][Math.floor(Math.random() * 6)];
   const amount = parseFloat((totalBet * mult).toFixed(2));
   return { kind: 'credits', amount, label: formatCredits(amount), color: '#00BFFF' };
 }
@@ -334,7 +333,6 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
   const [rushPhase, setRushPhase]         = useState<'idle' | 'spinning' | 'done'>('idle');
   const [spinningCols, setSpinningCols]   = useState([false, false, false, false, false]);
   const [newlyLanded, setNewlyLanded]     = useState<Set<number>>(new Set());
-  const [flashMultiplier, setFlashMultiplier] = useState<number | null>(null);
   const [totalPrize, setTotalPrize]       = useState(0);
   const [tienLen, setTienLen]             = useState<TienLenState | null>(null);
   const [isGrandJackpot, setIsGrandJackpot] = useState(false);
@@ -455,16 +453,6 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
             setNewlyLanded(new Set());
 
             if (triggeredDiamond) {
-              if (totalNewCount > 1) {
-                resolvedSlots = resolvedSlots.map((v, i) =>
-                  v && !landedIdxs.has(i) && v.kind === 'credits'
-                    ? { ...v, amount: parseFloat((v.amount * totalNewCount).toFixed(2)) }
-                    : v
-                );
-                setSlots([...resolvedSlots]);
-                setFlashMultiplier(totalNewCount);
-                setTimeout(() => setFlashMultiplier(null), 900);
-              }
               const dIdx = Array.from(landedIdxs).find(i => resolvedSlots[i]?.kind === 'DIAMOND') ?? 0;
               trackFeature('tien_len');
               setReSpins(3);
@@ -481,16 +469,6 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
               return;
             }
 
-            if (totalNewCount > 0) {
-              resolvedSlots = resolvedSlots.map((v, i) =>
-                v && !landedIdxs.has(i) && v.kind === 'credits'
-                  ? { ...v, amount: parseFloat((v.amount * totalNewCount).toFixed(2)) }
-                  : v
-              );
-              setSlots([...resolvedSlots]);
-              setFlashMultiplier(totalNewCount);
-              setTimeout(() => setFlashMultiplier(null), 900);
-            }
 
             const allFilled  = resolvedSlots.every(Boolean);
             const newReSpins = totalNewCount > 0 ? 3 : reSpinsRef.current - 1;
@@ -721,20 +699,6 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
             SPINS LEFT: <span className="font-black text-yellow-400 text-xl">{reSpins}</span>
           </div>
         )}
-        <AnimatePresence>
-          {flashMultiplier && (
-            <motion.div
-              className="text-2xl font-black"
-              style={{ color: '#FF4D6D', textShadow: '0 0 20px rgba(255,77,109,0.9)' }}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1.25 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              transition={{ duration: 0.3 }}
-            >
-              ×{flashMultiplier} MULTIPLIER!
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* ── 5×3 Buffalo grid ── */}

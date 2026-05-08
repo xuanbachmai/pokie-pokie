@@ -4,61 +4,61 @@ export const SYMBOLS: Record<SymbolId, GameSymbol> = {
   [SymbolId.DRAGON]: {
     id: SymbolId.DRAGON, label: 'Cậu Vàng', emoji: '🐕',
     weight: 1, isWild: false, isScatter: false,
-    payouts: { 3: 25, 4: 100, 5: 500 },
+    payouts: { 3: 15, 4: 60, 5: 250 },
     color: '#FFA000',
   },
   [SymbolId.TIGER]: {
     id: SymbolId.TIGER, label: 'Phượng', emoji: '🦅',
     weight: 2, isWild: false, isScatter: false,
-    payouts: { 3: 15, 4: 50, 5: 200 },
+    payouts: { 3: 10, 4: 30, 5: 100 },
     color: '#FF8C00',
   },
   [SymbolId.PANDA]: {
     id: SymbolId.PANDA, label: 'Hoa Sen', emoji: '🪷',
     weight: 3, isWild: false, isScatter: false,
-    payouts: { 3: 10, 4: 35, 5: 100 },
+    payouts: { 3: 6, 4: 20, 5: 60 },
     color: '#FF85A1',
   },
   [SymbolId.KOI]: {
     id: SymbolId.KOI, label: 'Đèn Lồng', emoji: '🏮',
     weight: 4, isWild: false, isScatter: false,
-    payouts: { 3: 8, 4: 25, 5: 75 },
+    payouts: { 3: 4, 4: 12, 5: 40 },
     color: '#FF6B00',
   },
   [SymbolId.LOTUS]: {
     id: SymbolId.LOTUS, label: 'Tre Xanh', emoji: '🎋',
     weight: 5, isWild: false, isScatter: false,
-    payouts: { 3: 5, 4: 15, 5: 50 },
+    payouts: { 3: 3, 4: 8, 5: 25 },
     color: '#2E7D32',
   },
   [SymbolId.COIN]: {
     id: SymbolId.COIN, label: 'Phở', emoji: '🍜',
     weight: 6, isWild: false, isScatter: false,
-    payouts: { 3: 3, 4: 10, 5: 30 },
+    payouts: { 3: 2, 4: 6, 5: 15 },
     color: '#FFD700',
   },
   [SymbolId.JADE]: {
     id: SymbolId.JADE, label: 'Lúa', emoji: '🌾',
     weight: 6, isWild: false, isScatter: false,
-    payouts: { 3: 2, 4: 8, 5: 20 },
+    payouts: { 3: 1, 4: 3, 5: 10 },
     color: '#8BC34A',
   },
   [SymbolId.WILD]: {
     id: SymbolId.WILD, label: 'Hổ WILD', emoji: '🐯',
-    weight: 5, isWild: true, isScatter: false,
-    payouts: { 3: 10, 4: 35, 5: 120 },   // lower pure-wild line pay; substitution drives real value
+    weight: 2, isWild: true, isScatter: false,
+    payouts: { 3: 6, 4: 20, 5: 70 },
     color: '#FF8C00',
   },
   [SymbolId.SCATTER]: {
     id: SymbolId.SCATTER, label: 'Trống Đồng', emoji: '🥁',
-    weight: 3, isWild: false, isScatter: true,   // ↑ raised: more frequent free games triggers
+    weight: 1, isWild: false, isScatter: true,
     payouts: { 3: 5, 4: 20, 5: 100 },
     color: '#CD7F32',
   },
   [SymbolId.NUGGET]: {
     id: SymbolId.NUGGET, label: 'Trâu', emoji: '🐃',
-    weight: 4, isWild: false, isScatter: false,   // feature-only: breaks paylines, triggers Buffalo Rush at 6+
-    payouts: {},   // no payline prizes — Buffalo Rush pays separately
+    weight: 2, isWild: false, isScatter: false,
+    payouts: {},
     color: '#8B5E3C',
   },
   [SymbolId.SPECIAL]: {
