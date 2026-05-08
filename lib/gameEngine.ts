@@ -81,15 +81,16 @@ function enforceBuffaloLimits(grid: SymbolId[][]): void {
     }
   }
 
-  // 2. Cap total buffalo — if 6+ would appear, 85% chance to reduce to 3-5
+  // 2. Cap total buffalo — if 6+ would appear, 92% chance to reduce to 4-5
+  // (bias toward 4-5 to tease the player without triggering the feature)
   const allBuffaloPos: Array<[number, number]> = [];
   for (let col = 0; col < grid.length; col++)
     for (let row = 0; row < grid[col].length; row++)
       if (grid[col][row] === SymbolId.NUGGET || grid[col][row] === SymbolId.SPECIAL)
         allBuffaloPos.push([col, row]);
 
-  if (allBuffaloPos.length >= 6 && Math.random() < 0.85) {
-    const keepCount = 3 + Math.floor(Math.random() * 3);
+  if (allBuffaloPos.length >= 6 && Math.random() < 0.92) {
+    const keepCount = 4 + Math.floor(Math.random() * 2); // 4 or 5
     const shuffled = allBuffaloPos.sort(() => Math.random() - 0.5);
     for (let i = keepCount; i < shuffled.length; i++) {
       const [col, row] = shuffled[i];
@@ -118,10 +119,14 @@ function boostBuffaloForLateFreeSpin(grid: SymbolId[][]): void {
       if (grid[col][row] === SymbolId.NUGGET || grid[col][row] === SymbolId.SPECIAL)
         count++;
 
-  // Already at 6+ — Buffalo Rush will trigger naturally
-  if (count >= 6) return;
+  // Target: 4 (50%), 5 (35%), 6 (15%) — tease more than trigger
+  const rng = Math.random();
+  const target = rng < 0.50 ? 4 : rng < 0.85 ? 5 : 6;
 
-  const needed = 6 - count;
+  // Already at or above target — leave untouched
+  if (count >= target) return;
+
+  const needed = target - count;
 
   // Collect low-value positions that can be swapped (never touch wilds/scatters)
   const low = [SymbolId.JADE, SymbolId.COIN, SymbolId.LOTUS, SymbolId.KOI];
@@ -134,8 +139,8 @@ function boostBuffaloForLateFreeSpin(grid: SymbolId[][]): void {
   candidates.sort(() => Math.random() - 0.5);
   for (let i = 0; i < Math.min(needed, candidates.length); i++) {
     const [col, row] = candidates[i];
-    // 8 % → Diamond Buffalo (SPECIAL), 92 % → regular Buffalo (NUGGET)
-    grid[col][row] = Math.random() < 0.08 ? SymbolId.SPECIAL : SymbolId.NUGGET;
+    // 5% → Diamond Buffalo (SPECIAL), 95% → regular Buffalo (NUGGET)
+    grid[col][row] = Math.random() < 0.05 ? SymbolId.SPECIAL : SymbolId.NUGGET;
   }
 }
 
