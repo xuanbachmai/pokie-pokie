@@ -37,9 +37,9 @@ function randomSlotValue(
   const f = denomDifficultyFactor(denomination);
   const r = Math.random();
 
-  if (r < 0.0003 * f) return { kind: 'GRAND', amount: jackpots[JackpotTier.GRAND], label: 'MEGA',  color: '#FF4D6D' };
-  if (r < 0.002  * f) return { kind: 'MAJOR', amount: jackpots[JackpotTier.MAJOR], label: 'MINOR', color: '#FF8C00' };
-  if (r < 0.010  * f) return { kind: 'MINOR', amount: jackpots[JackpotTier.MINOR], label: 'MAJOR', color: '#FFD700' };
+  if (r < 0.00005 * f) return { kind: 'GRAND', amount: jackpots[JackpotTier.GRAND], label: 'MEGA',  color: '#FF4D6D' };
+  if (r < 0.0005  * f) return { kind: 'MAJOR', amount: jackpots[JackpotTier.MAJOR], label: 'MINOR', color: '#FF8C00' };
+  if (r < 0.003   * f) return { kind: 'MINOR', amount: jackpots[JackpotTier.MINOR], label: 'MAJOR', color: '#FFD700' };
 
   const miniThreshold = miniCount.current < 1
     ? Math.max(0.02, (0.10 - Math.log10(Math.max(denomination, 0.01)) * 0.04) * f)
@@ -61,9 +61,9 @@ function randomTienLenPrize(totalBet: number): SlotValue {
   const jackpots = useJackpotStore.getState().values;
   const r = Math.random();
   // Tiến Lên is a rare feature — each slot pays more generously
-  if (r < 0.0005) return { kind: 'GRAND', amount: jackpots[JackpotTier.GRAND], label: 'MEGA',  color: '#FF4D6D' };
-  if (r < 0.003 ) return { kind: 'MAJOR', amount: jackpots[JackpotTier.MAJOR], label: 'MINOR', color: '#FF8C00' };
-  if (r < 0.015 ) return { kind: 'MINOR', amount: jackpots[JackpotTier.MINOR], label: 'MAJOR', color: '#FFD700' };
+  if (r < 0.00008) return { kind: 'GRAND', amount: jackpots[JackpotTier.GRAND], label: 'MEGA',  color: '#FF4D6D' };
+  if (r < 0.0006 ) return { kind: 'MAJOR', amount: jackpots[JackpotTier.MAJOR], label: 'MINOR', color: '#FF8C00' };
+  if (r < 0.004  ) return { kind: 'MINOR', amount: jackpots[JackpotTier.MINOR], label: 'MAJOR', color: '#FFD700' };
   if (r < 0.080 ) return { kind: 'MINI',  amount: jackpots[JackpotTier.MINI],  label: 'MINI',  color: '#00D187' };
   // Credit prizes: boosted multipliers (avg ~18×) since full-line is hard to achieve
   const mult   = [5, 8, 12, 18, 28, 45][Math.floor(Math.random() * 6)];
@@ -397,7 +397,7 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
       for (let row = 0; row < 3; row++) {
         const idx = row * 5 + col;
         if (currentSlots[idx] !== null) { colOutcomes.push(null); continue; }
-        if (Math.random() < 0.12) {
+        if (Math.random() < 0.05) {
           if (diamondColIdx < 0 && !diamondLandedRef.current && Math.random() < 0.04) {
             colOutcomes.push('DIAMOND');
             diamondColIdx = col;
@@ -556,7 +556,7 @@ export function NuggetHoldFeature({ onClose }: { onClose: () => void }) {
     // Pre-roll outcomes (20% hit chance per empty column — full-line is very rare)
     const currentPrizes = [...tl.prizes];
     const outcomes: (SlotValue | null)[] = currentPrizes.map(p =>
-      p === null && Math.random() < 0.20 ? randomTienLenPrize(totalBet) : null
+      p === null && Math.random() < 0.08 ? randomTienLenPrize(totalBet) : null
     );
 
     let totalNewCount = 0;
