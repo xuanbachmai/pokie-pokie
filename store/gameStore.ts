@@ -295,9 +295,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
 
       } else if (isFreeSpinActive) {
-        // During free spins — credit win and check if session is done
+        // During free spins — accumulate wins but do NOT credit to balance yet.
+        // When the session ends, lastWinAmount holds the total so the player
+        // can choose to Take Win or Gamble, exactly like a normal spin.
         const newFSTW = parseFloat((freeSpinsTotalWin + totalWin).toFixed(2));
-        set({ balance: parseFloat((get().balance + totalWin).toFixed(2)), freeSpinsTotalWin: newFSTW });
+        set({ freeSpinsTotalWin: newFSTW });
 
         if (newFreeSpinsRemaining > 0) {
           set({ phase: 'FREE_SPINS' });
@@ -308,6 +310,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             freeSpinsMultiplier: 1,
             lastWinAmount:       newFSTW,
             freeSpinsTotalWin:   0,
+            bigWinTier:          bigWinTier as 'WIN' | 'GREAT' | 'BIG' | 'MEGA' | null,
           });
         }
 
