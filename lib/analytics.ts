@@ -19,6 +19,18 @@ export function getOrCreateSessionId(): string {
   return id;
 }
 
+// ── Heartbeat — keeps last_seen_at fresh so "live" count stays accurate ───────
+export function startSessionHeartbeat(): () => void {
+  const ping = () => {
+    const id = getOrCreateSessionId();
+    if (!id) return;
+    supabase.from('sessions').update({ last_seen_at: new Date().toISOString() }).eq('id', id).then();
+  };
+  ping(); // immediate first ping
+  const interval = setInterval(ping, 2 * 60 * 1000); // every 2 minutes
+  return () => clearInterval(interval);
+}
+
 // ── Generic event ─────────────────────────────────────────────────────────────
 function track(type: string, amount: number, meta?: Record<string, unknown>): void {
   const sessionId = getOrCreateSessionId();

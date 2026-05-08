@@ -12,11 +12,15 @@ import {
   trackWin,
   trackFeature,
   trackJackpotWin,
+  startSessionHeartbeat,
 } from '@/lib/analytics';
 
 export function useAnalytics() {
-  // Ensure session exists on first render
-  useEffect(() => { getOrCreateSessionId(); }, []);
+  // Ensure session exists and keep last_seen_at fresh for live count
+  useEffect(() => {
+    getOrCreateSessionId();
+    return startSessionHeartbeat();
+  }, []);
 
   // Track refs to detect changes
   const prevPhaseRef         = useRef<string>('');
