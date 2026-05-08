@@ -50,9 +50,7 @@ function MiniCard({ card, won }: { card: CardDraw; won: boolean }) {
         color,
       }}
     >
-      <div style={{ fontSize: 8, fontWeight: 900, lineHeight: 1, alignSelf: 'flex-start' }}>{rank}</div>
-      <div style={{ fontSize: 14, lineHeight: 1 }}>{sym}</div>
-      <div style={{ fontSize: 8, fontWeight: 900, lineHeight: 1, alignSelf: 'flex-end', transform: 'rotate(180deg)' }}>{rank}</div>
+      <div style={{ fontSize: 18, lineHeight: 1 }}>{sym}</div>
     </motion.div>
   );
 }
