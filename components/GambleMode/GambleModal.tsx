@@ -417,7 +417,7 @@ export function GambleModal() {
 
                 {/* 4 suits */}
                 <div className="grid grid-cols-4 gap-1.5">
-                  {(['spades', 'hearts', 'diamonds', 'clubs'] as const).map(suit => {
+                  {(['hearts', 'diamonds', 'spades', 'clubs'] as const).map(suit => {
                     const isRed = suit === 'hearts' || suit === 'diamonds';
                     return (
                       <motion.button
