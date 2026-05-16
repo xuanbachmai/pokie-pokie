@@ -14,7 +14,7 @@ strange.
 
 So I started asking questions.
 
-Australia has the highest gambling losses per capita of any country on Earth — roughly
+Australia has the highest gambling losses per capita of any country on Earth - roughly
 **$1,000 per adult per year**, significantly more than the United States despite having
 a fraction of the population. The US casino industry is built around destinations like
 Las Vegas; Australia put the machines in the pub down the street. Accessibility turned
@@ -22,7 +22,7 @@ out to be the key variable.
 
 But the more interesting question to me was psychological: **why are these machines so
 hard to walk away from?** I'd taken enough behavioural economics to recognise the
-vocabulary — variable-ratio reinforcement schedules, near-miss effects, the way a losing
+vocabulary - variable-ratio reinforcement schedules, near-miss effects, the way a losing
 spin is animated to *feel* like almost-winning - but I wanted to understand it from the
 inside. Not by losing money, but by building the thing myself.
 
