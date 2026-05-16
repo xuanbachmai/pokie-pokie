@@ -1,11 +1,11 @@
-# 🎰 Vietnam Maze — A Pokies Simulation / Demo
+# 🎰 Vietnam Maze - A Pokies Simulation / Demo
 
 ---
 
 ## Why I built this
 
 I moved to Australia for university, and after 3 years, one of the first things that caught me off-guard
-wasn't the weather or the accent — it was the pokies.
+wasn't the weather or the accent - it was the pokies.
 
 Walk into any pub, any RSL club, any corner of a shopping strip, and there they are:
 rows of glowing slot machines, completely legal, completely normal, humming quietly while
@@ -23,7 +23,7 @@ out to be the key variable.
 But the more interesting question to me was psychological: **why are these machines so
 hard to walk away from?** I'd taken enough behavioural economics to recognise the
 vocabulary — variable-ratio reinforcement schedules, near-miss effects, the way a losing
-spin is animated to *feel* like almost-winning — but I wanted to understand it from the
+spin is animated to *feel* like almost-winning - but I wanted to understand it from the
 inside. Not by losing money, but by building the thing myself.
 
 So I did.
