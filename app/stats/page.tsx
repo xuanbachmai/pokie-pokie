@@ -73,51 +73,98 @@ const TYPE_META: Record<string, { label: string; color: string; emoji: string }>
   gamble_loss:  { label: 'Gamble Loss',  color: '#FF8C00', emoji: '♥' },
 };
 
-// ── Bar chart (inline SVG) ────────────────────────────────────────────────────
-function HourlyChart({ data }: { data: HourlyRow[] }) {
-  const rows = [...data].reverse().slice(-24);
-  if (rows.length === 0) return (
-    <div className="flex items-center justify-center h-32 text-gray-600 text-sm">No activity yet</div>
+// ── Area line chart — Wagered vs Paid Out trend ───────────────────────────────
+function TrendChart({ data }: { data: HourlyRow[] }) {
+  const rows = [...data].sort((a, b) => a.hour < b.hour ? -1 : 1).slice(-24);
+  if (rows.length < 2) return (
+    <div className="flex items-center justify-center h-32 text-gray-600 text-sm">Not enough data yet</div>
   );
+  const W = 600, H = 110, PAD = 8;
+  const maxVal = Math.max(...rows.flatMap(r => [Number(r.wagered), Number(r.paid_out)]), 1);
+  const pts = (key: 'wagered' | 'paid_out') =>
+    rows.map((r, i) => [
+      PAD + (i / (rows.length - 1)) * (W - PAD * 2),
+      H - PAD - (Number(r[key]) / maxVal) * (H - PAD * 2),
+    ] as [number, number]);
 
-  const maxW = Math.max(...rows.map(r => Number(r.wagered)), 1);
-  const maxP = Math.max(...rows.map(r => Number(r.paid_out)), 1);
-  const maxVal = Math.max(maxW, maxP, 1);
-  const barH = 80;
-  const barW = 16;
-  const gap   = 4;
-  const total = rows.length;
-  const svgW  = total * (barW + gap);
+  const toPath  = (pts: [number,number][]) => pts.map((p,i) => `${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const toArea  = (pts: [number,number][]) => toPath(pts) + ` L${pts[pts.length-1][0].toFixed(1)},${H} L${pts[0][0].toFixed(1)},${H} Z`;
+
+  const wPts = pts('wagered'), pPts = pts('paid_out');
+
+  // X-axis hour labels — every 4 hours
+  const labels = rows.filter((_, i) => i % 4 === 0 || i === rows.length - 1);
 
   return (
-    <div className="overflow-x-auto">
-      <svg width={svgW} height={barH + 28} style={{ display: 'block' }}>
-        {rows.map((r, i) => {
-          const x    = i * (barW + gap);
-          const wH   = Math.max(2, (Number(r.wagered)  / maxVal) * barH);
-          const pH   = Math.max(2, (Number(r.paid_out) / maxVal) * barH);
-          const hour = new Date(r.hour).getHours();
+    <div className="w-full overflow-x-auto">
+      <svg viewBox={`0 0 ${W} ${H + 20}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+        <defs>
+          <linearGradient id="gW" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#00C87A" stopOpacity="0.35"/>
+            <stop offset="100%" stopColor="#00C87A" stopOpacity="0"/>
+          </linearGradient>
+          <linearGradient id="gP" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#FF4D6D" stopOpacity="0.28"/>
+            <stop offset="100%" stopColor="#FF4D6D" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+        {/* Grid lines */}
+        {[0.25, 0.5, 0.75, 1].map(f => (
+          <line key={f}
+            x1={PAD} y1={H - PAD - f * (H - PAD * 2)}
+            x2={W - PAD} y2={H - PAD - f * (H - PAD * 2)}
+            stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+        ))}
+        {/* Areas */}
+        <path d={toArea(wPts)} fill="url(#gW)"/>
+        <path d={toArea(pPts)} fill="url(#gP)"/>
+        {/* Lines */}
+        <path d={toPath(wPts)} fill="none" stroke="#00C87A" strokeWidth="1.8" strokeLinejoin="round"/>
+        <path d={toPath(pPts)} fill="none" stroke="#FF4D6D" strokeWidth="1.8" strokeLinejoin="round"/>
+        {/* Dots at last point */}
+        <circle cx={wPts[wPts.length-1][0]} cy={wPts[wPts.length-1][1]} r="3" fill="#00C87A"/>
+        <circle cx={pPts[pPts.length-1][0]} cy={pPts[pPts.length-1][1]} r="3" fill="#FF4D6D"/>
+        {/* X labels */}
+        {labels.map(r => {
+          const i = rows.indexOf(r);
+          const x = PAD + (i / (rows.length - 1)) * (W - PAD * 2);
           return (
-            <g key={r.hour}>
-              {/* Wagered bar */}
-              <rect x={x} y={barH - wH} width={barW * 0.55} height={wH}
-                fill="rgba(0,200,122,0.55)" rx={2} />
-              {/* Paid out bar */}
-              <rect x={x + barW * 0.45} y={barH - pH} width={barW * 0.55} height={pH}
-                fill="rgba(255,77,109,0.5)" rx={2} />
-              {/* Hour label */}
-              <text x={x + barW / 2} y={barH + 16} textAnchor="middle"
-                fontSize={8} fill="rgba(255,255,255,0.3)">
-                {hour}h
-              </text>
-            </g>
+            <text key={r.hour} x={x} y={H + 16} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,0.25)">
+              {new Date(r.hour).getHours()}h
+            </text>
           );
         })}
       </svg>
-      <div className="flex gap-4 mt-1 text-[10px]">
-        <span style={{ color: 'rgba(0,200,122,0.8)' }}>■ Wagered</span>
-        <span style={{ color: 'rgba(255,77,109,0.8)' }}>■ Paid out</span>
+      <div className="flex gap-5 mt-1 text-[10px]">
+        <span style={{ color: '#00C87A' }}>● Wagered</span>
+        <span style={{ color: '#FF4D6D' }}>● Paid Out</span>
       </div>
+    </div>
+  );
+}
+
+// ── Feature breakdown horizontal bars ─────────────────────────────────────────
+function FeatureChart({ buffalo, freeSpins, tienLen }: { buffalo: number; freeSpins: number; tienLen: number }) {
+  const total = Math.max(buffalo + freeSpins + tienLen, 1);
+  const bars = [
+    { label: '🐃 Buffalo Rush', value: buffalo,   color: '#FF8C00' },
+    { label: '🥁 Free Spins',   value: freeSpins, color: '#A855F7' },
+    { label: '💎 Tiến Lên',     value: tienLen,   color: '#00BFFF' },
+  ];
+  return (
+    <div className="flex flex-col gap-3">
+      {bars.map(b => (
+        <div key={b.label}>
+          <div className="flex justify-between text-[11px] mb-1">
+            <span style={{ color: b.color }}>{b.label}</span>
+            <span className="text-gray-500">{b.value.toLocaleString()} &nbsp;<span className="text-gray-700">({(b.value / total * 100).toFixed(1)}%)</span></span>
+          </div>
+          <div className="rounded-full overflow-hidden" style={{ height: 8, background: 'rgba(255,255,255,0.06)' }}>
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${(b.value / total * 100).toFixed(1)}%`, background: b.color, boxShadow: `0 0 8px ${b.color}88` }}/>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -350,13 +397,22 @@ export default function StatsPage() {
                 sub="total attempts" />
             </div>
 
-            {/* ── Hourly chart ── */}
-            <div className="rounded-2xl p-5 mb-6"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <h2 className="text-[11px] tracking-widest text-gray-600 uppercase mb-4">
-                📊 Hourly Activity (last 24h)
-              </h2>
-              <HourlyChart data={hourly} />
+            {/* ── Charts row ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div className="rounded-2xl p-5"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <h2 className="text-[11px] tracking-widest text-gray-600 uppercase mb-4">📈 Wagered vs Paid Out (24h)</h2>
+                <TrendChart data={hourly} />
+              </div>
+              <div className="rounded-2xl p-5"
+                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <h2 className="text-[11px] tracking-widest text-gray-600 uppercase mb-4">🎮 Feature Breakdown</h2>
+                <FeatureChart
+                  buffalo={ov?.buffalo_rush_count ?? 0}
+                  freeSpins={ov?.free_spins_count ?? 0}
+                  tienLen={ov?.tien_len_count ?? 0}
+                />
+              </div>
             </div>
 
             {/* ── Live activity feed ── */}
