@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Overview {
   total_players:    number;
+  players_played:   number;
   players_today:    number;
   players_week:     number;
   players_live:     number;
@@ -291,7 +292,9 @@ export default function StatsPage() {
             {/* ── Players ── */}
             <h2 className="text-[11px] tracking-widest text-gray-600 uppercase mb-3">Players</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              <Card emoji="👥" label="Total Players"   value={num(ov?.total_players ?? 0)}  color="#00D187" />
+              <Card emoji="👥" label="Total Visitors"  value={num(ov?.total_players ?? 0)}  color="#00D187" />
+              <Card emoji="🎰" label="Total Played"    value={num(ov?.players_played ?? 0)} color="#FFD700"
+                sub="actually spun" />
               <Card emoji="🟢" label="Live (30 min)"   value={num(ov?.players_live ?? 0)}   color="#00FF99"
                 sub="currently active" />
               <Card emoji="📅" label="Today"           value={num(ov?.players_today ?? 0)}  color="#00BFFF" />
