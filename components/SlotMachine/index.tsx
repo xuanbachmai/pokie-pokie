@@ -289,14 +289,6 @@ function DonateButton() {
               />
             </div>
             <span className="text-[9px] text-gray-500">Scan to buy me a coffee ☕</span>
-            <a
-              href="https://buymeacoffee.com/xuanbach"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[9px] text-blue-400 underline underline-offset-2"
-            >
-              or click to open ☕
-            </a>
           </motion.div>
         )}
       </AnimatePresence>
