@@ -122,6 +122,9 @@ export function DepositScreen({ onComplete, isTopUp = false }: { onComplete: () 
             If it feels compelling, <span className="text-white">that&apos;s by design.</span>{' '}
             Do your own research and play with responsibility.
           </p>
+          <p className="text-[10px] text-gray-600 mt-1.5">
+            🇦🇺 Built in Australia · For demonstration purposes only
+          </p>
         </div>
 
         {/* Current balance */}
