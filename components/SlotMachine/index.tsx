@@ -284,18 +284,18 @@ function DonateButton() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/paypal-qr.png"
-                alt="PayPal QR — Xuan Bach Mai"
+                alt="Buy Me a Coffee QR"
                 className="w-28 h-28 object-contain"
               />
             </div>
-            <span className="text-[9px] text-gray-500">Scan · Xuan Bach Mai</span>
+            <span className="text-[9px] text-gray-500">Scan to buy me a coffee ☕</span>
             <a
-              href="https://www.paypal.com/donate?business=bachmxuan%40gmail.com"
+              href="https://buymeacoffee.com/xuanbach"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[9px] text-blue-400 underline underline-offset-2"
             >
-              or click to open PayPal
+              or click to open ☕
             </a>
           </motion.div>
         )}
