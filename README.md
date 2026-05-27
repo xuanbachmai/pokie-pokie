@@ -167,6 +167,7 @@ Online gambling simulators, social casino games, or gambling-themed applications
 - 🇨🇳 China (mainland)
 - 🇸🇬 Singapore (certain gambling-related content)
 - 🇺🇸 United States (varies by state — check local laws)
+- 🇻🇳 Vietnam (gambling is heavily restricted by law)
 - 🇧🇷 Brazil (regulations evolving)
 - 🇵🇱 Poland
 - 🇨🇾 Cyprus
