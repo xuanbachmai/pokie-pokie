@@ -105,6 +105,7 @@ Jackpots accumulate contributions from every bet placed across all players in re
 ```bash
 git clone https://github.com/xuanbachmai/pokie-pokie.git
 cd pokie-pokie
+
 npm install
 ```
 
